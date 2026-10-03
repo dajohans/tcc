@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define C_STR_LEN(str) (sizeof(str) / sizeof(str[0]))
+#define C_STR_LEN(str) ((sizeof(str) / sizeof(str[0])) - 1)
 
 typedef struct string {
 	char* c_str;

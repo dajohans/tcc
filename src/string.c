@@ -68,3 +68,16 @@ string stringify_c_str(char *str) {
 	return tmp;
 }
 
+bool str_cmp(string str_1, string str_2) {
+	if(str_1.len != str_2.len) {
+		return false;
+	}
+	bool are_equal = true;
+	for(int64_t i = 0; i < str_1.len; i++) {
+		if(str_1.c_str[i] != str_2.c_str[i]) {
+			are_equal = false;
+			break;
+		}
+	}
+	return are_equal;
+}

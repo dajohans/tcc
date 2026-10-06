@@ -180,6 +180,7 @@ int64_t next_non_whitespace(string source_text, int64_t start_index) {
 }
 
 int32_ptr lexer_tokenize_source(string source_text) {
+	// TODO Perhaps log here that lexical analysis starts
 	if(source_text.len < 0) {
 		return (int32_ptr){ .ptr = NULL, .len = -1, .cap = -1 };
 	} 
@@ -217,6 +218,8 @@ int32_ptr lexer_tokenize_source(string source_text) {
 				return (int32_ptr){ .ptr = NULL, .len = -1, .cap = -1 };
 			}
 		}
+		// TODO Perhaps make a log entry here: report what remains of
+		// the line from index onwards.
 		for(int64_t i = 0; i < ARR_LEN(tokenize_fun_ptr); i++) {
 			lexeme lex = tokenize_fun_ptr[i](source_text, index);
 			if(lex.token != ERROR) {
@@ -231,6 +234,9 @@ int32_ptr lexer_tokenize_source(string source_text) {
 				break;
 			}
 		}
+		// TODO Perhaps make a log entry here: if a token was found,
+		// report which substring it was and which token, and if a
+		// token was not found then report that
 		if(!identified_token) {
 			token_array.ptr[token_array.len] = ERROR;
 			token_array.len++;

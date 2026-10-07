@@ -5,7 +5,10 @@
 #include "error.h"
 #include "file_io.h"
 #include "lexer.h"
+#include "parser.h"
 #include "string.h"
+
+
 
 /* LEXER
  * Translates strings into integer tokes. Each lexeme is probably one
@@ -41,6 +44,7 @@
  */
 
 int main() {
+	
 	string file_name = set_string("test-file-3");
 	/* string file_name = set_string("test-file"); */
 	/* string file_name = set_string("test-file-2"); */
@@ -53,12 +57,16 @@ int main() {
 		free_string(file_name);
 		return 1;
 	}
-	printf("Hello, world!\nFile content: '%s'\n", file_content.c_str);
+	/* printf("Hello, world!\nFile content: '%s'\n", file_content.c_str); */
 	int32_ptr token_array = lexer_tokenize_source(file_content);
-	for(int64_t i = 0; i < token_array.len; i++) {
-		printf("lexeme: %-10s\n", token_to_c_str(token_array.ptr[i]));
+	/* for(int64_t i = 0; i < token_array.len; i++) { */
+	/* 	printf("lexeme: %-10s\n", token_to_c_str(token_array.ptr[i])); */
 	
-	}
+	/* } */
+
+	ast* syntax_tree = parse_function_prototype(token_array, 0);
+	print_ast(syntax_tree);
+	free_ast(syntax_tree);
 	free(token_array.ptr);
 	free_string(file_content);
 	free_string(file_name);

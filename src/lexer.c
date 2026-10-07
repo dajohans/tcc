@@ -5,31 +5,13 @@
 #include "lexer.h"
 #include "pointer.h"
 
-enum Lexer_Tokens {
-	ERROR = -1,
-	IDENTIFIER,
-	KEYWORD,
-	OPERATOR,
-	PAREN_OPEN,
-	PAREN_CLOSE,
-	BRACKET_OPEN,
-	BRACKET_CLOSE,
-	CURLY_OPEN,
-	CURLY_CLOSE,
-	NUMBER,
-	STRING,
-	COMMENT,
-	COMMA,
-	SEMICOLON
-};
-
 const string keyword_list[] = {
 	// TODO add more keywords
 	(string) { .c_str = "return", .len = C_STR_LEN("return"), .cap = C_STR_LEN("return") + 1 }
 };
 
 char* token_to_c_str(int32_t token) {
-	char* str = "ERROR";
+	char* str = "LEXEME_ERROR";
 	switch(token) {
 		case IDENTIFIER:
 			str = "IDENTIFIER";
@@ -79,7 +61,7 @@ char* token_to_c_str(int32_t token) {
 
 lexeme tokenize_single_char(string source_text, int64_t index, char c, int32_t token) {
 	if(!(source_text.c_str[index] == c)) {
-		return (lexeme) { .token = ERROR, .first_index = -1, .last_index = -1};
+		return (lexeme) { .token = LEXEME_ERROR, .first_index = -1, .last_index = -1};
 	}
 	return (lexeme) { .token = token, .first_index = index, .last_index = index };
 }
@@ -109,7 +91,7 @@ lexeme tokenize_number(string source_text, int64_t index) {
 	// notation, floating point numbers and numbers with type suffixes
 	// like .5f
 	if(!isdigit(source_text.c_str[index])) {
-		return (lexeme) { .token = ERROR, .first_index = -1, .last_index = -1};
+		return (lexeme) { .token = LEXEME_ERROR, .first_index = -1, .last_index = -1};
 	}
 	int64_t len = 0;
 	while(index + len < source_text.len) {
@@ -123,7 +105,7 @@ lexeme tokenize_number(string source_text, int64_t index) {
 }
 
 lexeme tokenize_keyword(string source_text, int64_t index) {
-	lexeme result = (lexeme) { .token = ERROR, .first_index = -1, .last_index = -1 };
+	lexeme result = (lexeme) { .token = LEXEME_ERROR, .first_index = -1, .last_index = -1 };
 	string tmp = set_string(source_text.c_str + index);
 	for(int64_t i = 0; i < ARR_LEN(keyword_list); i++) {
 		if(index + keyword_list[i].len < source_text.len) {
@@ -145,7 +127,7 @@ lexeme tokenize_keyword(string source_text, int64_t index) {
 
 lexeme tokenize_id(string source_text, int64_t index) {
 	if(!(isalpha(source_text.c_str[index]) || source_text.c_str[index] == '_')) {
-		return (lexeme) { .token = ERROR, .first_index = -1, .last_index = -1};
+		return (lexeme) { .token = LEXEME_ERROR, .first_index = -1, .last_index = -1};
 	}
 	int64_t len = 0;
 	while(index + len < source_text.len) {
@@ -222,13 +204,13 @@ int32_ptr lexer_tokenize_source(string source_text) {
 		// the line from index onwards.
 		for(int64_t i = 0; i < ARR_LEN(tokenize_fun_ptr); i++) {
 			lexeme lex = tokenize_fun_ptr[i](source_text, index);
-			if(lex.token != ERROR) {
+			if(lex.token != LEXEME_ERROR) {
 				identified_token = true;
 				token_array.ptr[token_array.len] = lex.token;
 				token_array.len++;
 				string test = set_string(source_text.c_str + lex.first_index);
 				test.c_str[lex.last_index - lex.first_index + 1] = '\0';
-				printf("lexeme: %-10s\tfirst index %ld last index %ld\n", test.c_str, lex.first_index, lex.last_index);
+				/* printf("lexeme: %-10s\tfirst index %ld last index %ld\n", test.c_str, lex.first_index, lex.last_index); */
 				free_string(test);
 				index = lex.last_index;
 				break;
@@ -238,9 +220,9 @@ int32_ptr lexer_tokenize_source(string source_text) {
 		// report which substring it was and which token, and if a
 		// token was not found then report that
 		if(!identified_token) {
-			token_array.ptr[token_array.len] = ERROR;
+			token_array.ptr[token_array.len] = LEXEME_ERROR;
 			token_array.len++;
-			printf("erroneous: %-7c\tat string index %ld\n", source_text.c_str[index], index);
+			/* printf("erroneous: %-7c\tat string index %ld\n", source_text.c_str[index], index); */
 		}
 	}
 	return token_array;

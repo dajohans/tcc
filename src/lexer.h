@@ -6,6 +6,24 @@
 #include "pointer.h"
 #include "string.h"
 
+enum Lexer_Tokens {
+	LEXEME_ERROR = -1,
+	IDENTIFIER,
+	KEYWORD,
+	OPERATOR,
+	PAREN_OPEN,
+	PAREN_CLOSE,
+	BRACKET_OPEN,
+	BRACKET_CLOSE,
+	CURLY_OPEN,
+	CURLY_CLOSE,
+	NUMBER,
+	STRING,
+	COMMENT,
+	COMMA,
+	SEMICOLON
+};
+
 typedef struct lexeme {
 	int32_t token;
 	int64_t first_index;

@@ -3,7 +3,7 @@ CFLAGS = -std=c2x -DDEBUG_VERBOSE
 
 default: out/main
 
-out/main: out/main.o out/string.o out/file_io.o out/lexer.o out/pointer.o out/error.o
+out/main: out/main.o out/string.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o
 	$(CC) $(CFLAGS) -fsanitize=address -g -o $@ $^
 
 out/%.o: src/%.c

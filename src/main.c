@@ -45,8 +45,8 @@
 
 int main() {
 	
-	string file_name = set_string("test-file-3");
-	/* string file_name = set_string("test-file"); */
+	/* string file_name = set_string("test-file-3"); */
+	string file_name = set_string("test-file");
 	/* string file_name = set_string("test-file-2"); */
 	if(file_name.len == -1) {
 		return 1;
@@ -61,10 +61,12 @@ int main() {
 	int32_ptr token_array = lexer_tokenize_source(file_content);
 	/* for(int64_t i = 0; i < token_array.len; i++) { */
 	/* 	printf("lexeme: %-10s\n", token_to_c_str(token_array.ptr[i])); */
-	
 	/* } */
 
-	ast* syntax_tree = parse_function_prototype(token_array, 0);
+	/* ast* syntax_tree = parse_type(token_array, 0); */
+	/* ast* syntax_tree = parse_function_prototype(token_array, 0); */
+	/* ast* syntax_tree = parse_statement(token_array, 5); */
+	ast* syntax_tree = parse_function_definition(token_array, 0);
 	print_ast(syntax_tree);
 	free_ast(syntax_tree);
 	free(token_array.ptr);

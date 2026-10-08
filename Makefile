@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c2x -DDEBUG_VERBOSE
+CFLAGS = -std=c2x
 
 default: out/main
 

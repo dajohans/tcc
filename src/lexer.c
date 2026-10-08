@@ -5,10 +5,23 @@
 #include "lexer.h"
 #include "pointer.h"
 
-const string keyword_list[] = {
+typedef struct keyword_token {
+	string name;
+	int32_t token;
+} lexeme_info;
+
+const lexeme_info keyword_list[] = {
 	// TODO add more keywords
-	(string) { .c_str = "return", .len = C_STR_LEN("return"), .cap = C_STR_LEN("return") + 1 }
+	(lexeme_info) {
+		.name = (string) { .c_str = "return", .len = C_STR_LEN("return"), .cap = C_STR_LEN("return") + 1 },
+		.token = KEYWORD_RETURN
+	},
+	(lexeme_info) {
+		.name = (string) { .c_str = "int", .len = C_STR_LEN("int"), .cap = C_STR_LEN("int") + 1 },
+		.token = KEYWORD_INT
+	}
 };
+
 
 char* token_to_c_str(int32_t token) {
 	char* str = "LEXEME_ERROR";
@@ -16,8 +29,11 @@ char* token_to_c_str(int32_t token) {
 		case IDENTIFIER:
 			str = "IDENTIFIER";
 			break;
-		case KEYWORD:
-			str = "KEYWORD";
+		case KEYWORD_INT:
+			str = "KEYWORD_INT";
+			break;
+		case KEYWORD_RETURN:
+			str = "KEYWORD_RETURN";
 			break;
 		case OPERATOR:
 			str = "OPERATOR";
@@ -108,16 +124,16 @@ lexeme tokenize_keyword(string source_text, int64_t index) {
 	lexeme result = (lexeme) { .token = LEXEME_ERROR, .first_index = -1, .last_index = -1 };
 	string tmp = set_string(source_text.c_str + index);
 	for(int64_t i = 0; i < ARR_LEN(keyword_list); i++) {
-		if(index + keyword_list[i].len < source_text.len) {
-			char tmp_char = tmp.c_str[keyword_list[i].len];
+		if(index + keyword_list[i].name.len < source_text.len) {
+			char tmp_char = tmp.c_str[keyword_list[i].name.len];
 			int64_t tmp_len = tmp.len;
-			tmp.c_str[keyword_list[i].len] = '\0';
-			tmp.len = keyword_list[i].len;
-			if(str_cmp(keyword_list[i], tmp)) {
-				result = (lexeme) { .token = KEYWORD, .first_index = index, .last_index = index + keyword_list[i].len - 1 };
+			tmp.c_str[keyword_list[i].name.len] = '\0';
+			tmp.len = keyword_list[i].name.len;
+			if(str_cmp(keyword_list[i].name, tmp)) {
+				result = (lexeme) { .token = keyword_list[i].token, .first_index = index, .last_index = index + keyword_list[i].name.len - 1 };
 				break;
 			}
-			tmp.c_str[keyword_list[i].len] = tmp_char;
+			tmp.c_str[keyword_list[i].name.len] = tmp_char;
 			tmp.len = tmp_len;
 		}
 	}

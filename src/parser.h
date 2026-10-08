@@ -11,7 +11,10 @@ typedef struct abstract_syntax_tree {
 
 void free_ast(ast* syntax_tree);
 char* grammer_token_to_c_str(int32_t token);
+ast* parse_function_definition(int32_ptr tokens, int64_t index);
 ast* parse_function_prototype(int32_ptr tokens, int64_t index);
+ast* parse_statement(int32_ptr tokens, int64_t index);
+ast* parse_type(int32_ptr tokens, int64_t index);
 void print_ast(ast* syntax_tree);
 
 #endif // PARSER_H

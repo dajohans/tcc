@@ -58,6 +58,34 @@ int main() {
 		free_string(file_name);
 		return 1;
 	}
+
+	/* string str = set_string("hej"); */
+	/* if(str.len < 0) { */
+	/* 	return 1; */
+	/* } */
+	/* string end = set_string("tjo"); */
+	/* if(end.len < 0) { */
+	/* 	return 1; */
+	/* } */
+	/* str = append_string(str, end); */
+	/* printf("appended string: '%s'\n", str.c_str); */
+	/* string_view sv = (string_view) { .ptr = str.c_str + 2, .len = 3 }; */
+	/* printf("string_view: '%.*s'\n", SV_ARG(sv)); */
+	/* free_string(str); */
+	/* free_string(end); */
+	/* string str2 = set_string("     hej     "); */
+	/* if(str2.len < 0) { */
+	/* 	return 1; */
+	/* } */
+	/* string_view sv2 = set_sv(str2, 0, str2.len); */
+	/* printf("trimmed: '%.*s'\n", SV_ARG(sv2)); */
+	/* sv_trim_left(&sv2); */
+	/* printf("trimmed: '%.*s'\n", SV_ARG(sv2)); */
+	/* sv_trim(&sv2); */
+	/* printf("trimmed: '%.*s'\n", SV_ARG(sv2)); */
+	/* free_string(str2); */
+
+	
 	/* printf("Hello, world!\nFile content: '%s'\n", file_content.c_str); */
 	int32_ptr token_array = lexer_tokenize_source(file_content);
 	/* for(int64_t i = 0; i < token_array.len; i++) { */

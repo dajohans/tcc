@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "code_gen.h"
 #include "error.h"
 #include "file_io.h"
 #include "lexer.h"
@@ -67,7 +68,10 @@ int main() {
 	/* ast* syntax_tree = parse_function_prototype(token_array, 0); */
 	/* ast* syntax_tree = parse_statement(token_array, 5); */
 	ast* syntax_tree = parse_function_definition(token_array, 0);
-	print_ast(syntax_tree);
+	/* print_ast(syntax_tree); */
+
+	code_gen(syntax_tree);
+	
 	free_ast(syntax_tree);
 	free(token_array.ptr);
 	free_string(file_content);

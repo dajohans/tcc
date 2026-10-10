@@ -51,15 +51,6 @@
  */
 
 
-enum Grammar_Rules {
-	AST_ERROR = -2,
-	TYPE = 100,
-	STATEMENT,
-	STATEMENT_LIST,
-	FUNCTION_PROTOTYPE,
-	FUNCTION_DEFINITION
-};
-
 void free_ast_helper(ast* syntax_tree) {
 	if(syntax_tree == NULL) {
 		return;

@@ -3,6 +3,15 @@
 
 #include "pointer.h"
 
+enum Grammar_Rules {
+	AST_ERROR = -2,
+	TYPE = 100,
+	STATEMENT,
+	STATEMENT_LIST,
+	FUNCTION_PROTOTYPE,
+	FUNCTION_DEFINITION
+};
+
 typedef struct abstract_syntax_tree {
 	int32_t language_construct;
 	struct abstract_syntax_tree** children;

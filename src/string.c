@@ -36,6 +36,7 @@ string concat_string(string str1, string str2) {
 		log_error("Failed to concatenate strings");
 		return tmp;
 	}
+	tmp.len = str1.len + str2.len;
 	for(int64_t i = 0; i < str1.len; i++) {
 		tmp.c_str[i] = str1.c_str[i];
 	}

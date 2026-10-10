@@ -21,7 +21,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 	// 1. Traverse the tree until we find int main(). Then add a call to main() to the main handling string
 	// 2. Find the nodes for each function, add a label for each function to the function implementation string. Also add the assembly code which corresponds to the code block of the function.
 	// 3. Add all strings and constant data found in the file to the data string
-	string main_handling1, main_handling2, impl_handling1, impl_handling2;
+	string main_handling1, impl_handling1, impl_handling2;
 	if(syntax_tree == NULL) {
 		main_handling1 = set_string("xor rdi, rdi\n");
 		if(main_handling1.cap < 0) {

@@ -190,7 +190,6 @@ int32_ptr lexer_tokenize_source(string source_text) {
 	}
 	token_array.len = 0;
 	token_array.cap = 5;
-	int64_t token_nr = 0;
 	int64_t index = 0;
 	while(index < source_text.len) {
 		index = next_non_whitespace(source_text, index + 1);

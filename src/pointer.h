@@ -3,7 +3,13 @@
 
 #include <stdint.h>
 
-#define ARR_LEN(array) (sizeof(array) / sizeof(array[0]))
+// NOTE: It may seem kind of stupid to cast to int64_t here, since
+// sizeof returns size_t. But not casting leads to lots of warnings
+// with -Wextra. One way to get rid of the warnings is to change the
+// implementations to use uint64_t but that prevents -1 from being a
+// valid error code and fixing that would require changes to the
+// architecture.
+#define ARR_LEN(array) (int64_t)(sizeof(array) / sizeof(array[0]))
 
 typedef struct int32_ptr {
 	int32_t* ptr;

@@ -31,8 +31,10 @@
  * classes like MATH_OP, PAREN, CURLY_BRACE and so on. Comment is
  * something like
  *     //[*]*
- *     /*[*]**/
-/* where [*] means any symbol. * Lastly, header name is something like
+ *     / *[*]**/
+/* where [*] means any symbol, and the space between / and * should be
+ * removed. But removing it leads to compiler warnings... * Lastly,
+ * header name is something like
  *     <[-_0-9a-zA-Z]+>
  * The priority should probably be to check them in this order:
  *    1. comment
@@ -49,12 +51,12 @@ int main() {
 	/* string file_name = set_string("test-file-3"); */
 	string file_name = set_string("test-file");
 	/* string file_name = set_string("test-file-2"); */
-	if(file_name.len == -1) {
+	if(file_name.len == 0) {
 		return 1;
 	}
 	string file_content = read_file(file_name);
 	/* string file_content = read_file_c_str("test-file"); */
-	if(file_content.cap == -1) {
+	if(file_content.cap == 0) {
 		free_string(file_name);
 		return 1;
 	}
@@ -84,7 +86,6 @@ int main() {
 	/* sv_trim(&sv2); */
 	/* printf("trimmed: '%.*s'\n", SV_ARG(sv2)); */
 	/* free_string(str2); */
-
 	
 	/* printf("Hello, world!\nFile content: '%s'\n", file_content.c_str); */
 	int32_ptr token_array = lexer_tokenize_source(file_content);

@@ -42,6 +42,6 @@ extern int64_t debug_trace_depth;
 #else
 #define log_function_exit(...)
 #endif
-// fprintf(stderr, "[Debug] exiting function %s in file %s\n", __func__, __FILE__); \
+// fprintf(stderr, "[Debug] exiting function %s in file %s\n", __func__, __FILE__);
 
 #endif // ERROR_H

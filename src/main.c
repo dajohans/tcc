@@ -88,20 +88,20 @@ int main() {
 	/* free_string(str2); */
 	
 	/* printf("Hello, world!\nFile content: '%s'\n", file_content.c_str); */
-	int32_ptr token_array = lexer_tokenize_source(file_content);
-	/* for(int64_t i = 0; i < token_array.len; i++) { */
-	/* 	printf("lexeme: %-10s\n", token_to_c_str(token_array.ptr[i])); */
-	/* } */
+	token_ptr token_array = lexer_tokenize_source(file_content);
+	for(int64_t i = 0; i < token_array.len; i++) {
+		printf("lexeme: %-15s - %.*s\n", token_to_c_str(token_array.ptr[i].token_kind), SV_ARG(token_array.ptr[i].lexeme));
+	}
 
 	/* ast* syntax_tree = parse_type(token_array, 0); */
 	/* ast* syntax_tree = parse_function_prototype(token_array, 0); */
 	/* ast* syntax_tree = parse_statement(token_array, 5); */
-	ast* syntax_tree = parse_function_definition(token_array, 0);
+	/* ast* syntax_tree = parse_function_definition(token_array, 0); */
 	/* print_ast(syntax_tree); */
 
-	code_gen(syntax_tree);
+	/* code_gen(syntax_tree); */
 	
-	free_ast(syntax_tree);
+	/* free_ast(syntax_tree); */
 	free(token_array.ptr);
 	free_string(file_content);
 	free_string(file_name);

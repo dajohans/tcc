@@ -35,6 +35,8 @@ string set_string(char* str);
 string_view set_sv(string str, int64_t start_offset, int64_t len);
 string_view set_sv_ptr(char* str, int64_t len);
 bool str_cmp(string str_1, string str_2);
+bool sv_cmp(string_view sv1, string_view sv2);
+string_view sv_move_forward(string_view *sv, int64_t distance);
 string_view sv_split_at_char(string_view *sv, char c);
 void sv_trim(string_view* sv);
 string_view sv_trim_left(string_view* sv);

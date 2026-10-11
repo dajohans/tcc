@@ -84,6 +84,20 @@ string set_string(char* str){
 	return tmp;
 }
 
+string_view set_sv(string str, int64_t start_offset, int64_t len) {
+	if(str.cap < 0) {
+		return (string_view) { .ptr = NULL, .len = -1 };
+	}
+	return (string_view) { .ptr = str.c_str + start_offset, .len = len };
+}
+
+string_view set_sv_ptr(char* str, int64_t len) {
+	if(str == NULL) {
+		return (string_view) { .ptr = NULL, .len = -1 };
+	}
+	return (string_view) { .ptr = str, .len = len };
+}
+
 bool str_cmp(string str_1, string str_2) {
 	if(str_1.len != str_2.len) {
 		return false;
@@ -98,18 +112,52 @@ bool str_cmp(string str_1, string str_2) {
 	return are_equal;
 }
 
-string_view set_sv(string str, int64_t start_offset, int64_t len) {
-	if(str.cap < 0) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+bool sv_cmp(string_view sv1, string_view sv2) {
+	if(sv1.len != sv2.len) {
+		return false;
 	}
-	return (string_view) { .ptr = str.c_str + start_offset, .len = len };
+	bool are_equal = true;
+	for(int64_t i = 0; i < sv1.len; i++) {
+		if(sv1.ptr[i] != sv2.ptr[i]) {
+			are_equal = false;
+			break;
+		}
+	}
+	return are_equal;
 }
 
-string_view set_sv_ptr(char* str, int64_t len) {
-	if(str == NULL) {
+string_view sv_move_forward(string_view *sv, int64_t distance) {
+	if(sv == NULL || sv->ptr == NULL) {
 		return (string_view) { .ptr = NULL, .len = -1 };
 	}
-	return (string_view) { .ptr = str, .len = len };
+	if(distance >= sv->len) {
+		string_view result = (string_view) { .ptr = sv->ptr, .len = sv->len };
+		sv->ptr = NULL;
+		sv->len = -1;
+		return result;
+	}
+	string_view result = (string_view) { .ptr = sv->ptr, .len = distance };
+	sv->ptr = sv->ptr + distance;
+	sv->len = sv->len - distance;
+	return result;
+}
+
+string_view sv_split_at_char(string_view *sv, char c) {
+	if(sv == NULL || sv->ptr == NULL) {
+		return (string_view) { .ptr = NULL, .len = -1 };
+	}
+	string_view result = (string_view) { .ptr = sv->ptr, .len = sv->len };
+	while(sv->len > 0 && sv->ptr[0] != c) {
+		sv->ptr = sv->ptr + 1;
+		sv->len--;
+	}
+	result.len = result.len - sv->len;
+	return result;
+}
+
+void sv_trim(string_view* sv) {
+	sv_trim_left(sv);
+	sv_trim_right(sv);
 }
 
 string_view sv_trim_left(string_view* sv) {
@@ -134,24 +182,6 @@ string_view sv_trim_right(string_view* sv) {
 		sv->len--;
 	}
 	result.ptr = result.ptr + sv->len;
-	result.len = result.len - sv->len;
-	return result;
-}
-
-void sv_trim(string_view* sv) {
-	sv_trim_left(sv);
-	sv_trim_right(sv);
-}
-
-string_view sv_split_at_char(string_view *sv, char c) {
-	if(sv == NULL || sv->ptr == NULL) {
-		return (string_view) { .ptr = NULL, .len = -1 };
-	}
-	string_view result = (string_view) { .ptr = sv->ptr, .len = sv->len };
-	while(sv->len > 0 && sv->ptr[0] != c) {
-		sv->ptr = sv->ptr + 1;
-		sv->len--;
-	}
 	result.len = result.len - sv->len;
 	return result;
 }

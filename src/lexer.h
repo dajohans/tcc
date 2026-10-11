@@ -38,18 +38,17 @@ typedef struct token_ptr {
 	int64_t cap;
 } token_ptr;
 
-token_ptr lexer_tokenize_source(string source_text);
+token_ptr lexer_tokenize_source(string_view sv);
 token_ptr realloc_token_ptr(token_ptr old_ptr);
 char* token_to_c_str(int32_t token);
-token tokenize_single_char(string source_text, int64_t index, char c, int32_t token_kind);
-token tokenize_paren_open(string source_text, int64_t index);
-token tokenize_paren_close(string source_text, int64_t index);
-token tokenize_curly_open(string source_text, int64_t index);
-token tokenize_curly_close(string source_text, int64_t index);
-token tokenize_semicolon(string source_text, int64_t index);
-token tokenize_number(string source_text, int64_t index);
-token tokenize_keyword(string source_text, int64_t index);
-token tokenize_id(string source_text, int64_t index);
-int64_t next_non_whitespace(string source_text, int64_t start_index);
+token tokenize_single_char(int64_t index, string_view sv, char c, int32_t token_kind);
+token tokenize_paren_open(int64_t index, string_view sv);
+token tokenize_paren_close(int64_t index, string_view sv);
+token tokenize_curly_open(int64_t index, string_view sv);
+token tokenize_curly_close(int64_t index, string_view sv);
+token tokenize_semicolon(int64_t index, string_view sv);
+token tokenize_number(int64_t index, string_view sv);
+token tokenize_keyword(int64_t index, string_view sv);
+token tokenize_id(int64_t index, string_view sv);
 
 #endif // LEXER_H

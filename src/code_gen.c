@@ -23,10 +23,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 	// 3. Add all strings and constant data found in the file to the data string
 	string main_handling1, impl_handling1, impl_handling2;
 	if(syntax_tree == NULL) {
-		main_handling1 = set_string("xor rdi, rdi\n");
-		if(main_handling1.cap < 0) {
-			return NULL;
-		}
+		return NULL;
 	}
 	// TODO: The below implementation assumes that the functions name
 	// is main and that the statement is "return 0;". In other words,
@@ -34,7 +31,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 	// demonstrates the basic idea. It remains to change the
 	// implementation to properly max the abstract syntax tree.
 	ast* statement_node = syntax_tree->children[2];
-	if(syntax_tree->language_construct == FUNCTION_DEFINITION) {
+	if(syntax_tree->kind == NON_TERMINAL && syntax_tree->node.syntax.construct == FUNCTION_DEFINITION) {
 		// NOTE: Assume for now that this is main()
 		main_handling1 = set_string(
 			"call main\n" \
@@ -48,7 +45,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 			free_string(main_handling1);
 			return NULL;
 		}
-		if(statement_node->language_construct == STATEMENT) {
+		if(statement_node->kind == NON_TERMINAL && statement_node->node.syntax.construct == STATEMENT) {
 		// NOTE: Assume for now that this is a return statement
 			impl_handling2 = set_string(
 				"mov rax, 0\n" \
@@ -100,9 +97,9 @@ void code_gen(ast* syntax_tree) {
 			impl[0].c_str, // main handling string: Code for calling main and handling its return value goes here
 			impl[1].c_str // function implementation string: Code which implements all functions goes here, including main()
 		);
+	    free_string(impl[0]);
+	    free_string(impl[1]);
+	    free(impl);
 	}
 	fclose(fp);
-	free_string(impl[0]);
-	free_string(impl[1]);
-	free(impl);
 }

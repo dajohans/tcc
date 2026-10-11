@@ -84,8 +84,8 @@ token_ptr lexer_tokenize_source(string_view sv) {
 			token_array.ptr[token_array.len] = (token) {
 				.lexeme = (string_view) { .ptr = sv.ptr, .len = 1 },
 				.token_kind = LEXEME_ERROR,
-				.first_index = index,
-				.last_index = index
+				.first_char_index = index,
+				.last_char_index = index
 			};
 			token_array.len++;
 		}
@@ -169,15 +169,15 @@ token tokenize_single_char(int64_t index, string_view sv, char c, int32_t token_
 		return (token) {
 			.lexeme = (string_view) { .ptr = NULL, .len = 0 },
 			.token_kind = LEXEME_ERROR,
-			.first_index = -1,
-			.last_index = -1
+			.first_char_index = -1,
+			.last_char_index = -1
 		};
 	}
 	return (token) {
 		.lexeme = (string_view) { .ptr = sv.ptr, .len = 1 },
 		.token_kind = token_kind,
-		.first_index = index,
-		.last_index = index
+		.first_char_index = index,
+		.last_char_index = index
 	};
 }
 
@@ -209,8 +209,8 @@ token tokenize_number(int64_t index, string_view sv) {
 		return (token) {
 			.lexeme = (string_view) { .ptr = NULL, .len = 0 },
 			.token_kind = LEXEME_ERROR,
-			.first_index = -1,
-			.last_index = -1
+			.first_char_index = -1,
+			.last_char_index = -1
 		};
 	}
 	int64_t len = 0;
@@ -224,8 +224,8 @@ token tokenize_number(int64_t index, string_view sv) {
 	return (token) {
 		.lexeme = (string_view) { .ptr = sv.ptr, .len = len },
 		.token_kind = NUMBER,
-		.first_index = index,
-		.last_index = index + len - 1
+		.first_char_index = index,
+		.last_char_index = index + len - 1
 	};
 }
 
@@ -233,8 +233,8 @@ token tokenize_keyword(int64_t index, string_view sv) {
 	token result = (token) {
 		.lexeme = (string_view) { .ptr = NULL, .len = 0 },
 		.token_kind = LEXEME_ERROR,
-		.first_index = -1,
-		.last_index = -1
+		.first_char_index = -1,
+		.last_char_index = -1
 	};
 	for(int64_t i = 0; i < ARR_LEN(keyword_token_list); i++) {
 		if(keyword_token_list[i].lexeme.len <= sv.len) {
@@ -250,8 +250,8 @@ token tokenize_keyword(int64_t index, string_view sv) {
 				result = (token) {
 					.lexeme = (string_view) { .ptr = sv.ptr, .len = keyword_token_list[i].lexeme.len },
 					.token_kind = keyword_token_list[i].token_kind,
-					.first_index = index,
-					.last_index = index + keyword_token_list[i].lexeme.len - 1
+					.first_char_index = index,
+					.last_char_index = index + keyword_token_list[i].lexeme.len - 1
 				};
 				break;
 			}
@@ -265,8 +265,8 @@ token tokenize_id(int64_t index, string_view sv) {
 		return (token) {
 			.lexeme = (string_view) { .ptr = NULL, .len = 0 },
 			.token_kind = LEXEME_ERROR,
-			.first_index = -1,
-			.last_index = -1
+			.first_char_index = -1,
+			.last_char_index = -1
 		};
 	}
 	int64_t len = 0;
@@ -283,7 +283,7 @@ token tokenize_id(int64_t index, string_view sv) {
 	return (token) {
 		.lexeme = (string_view) { .ptr = sv.ptr, .len = len },
 		.token_kind = IDENTIFIER,
-		.first_index = index,
-		.last_index = index + len - 1
+		.first_char_index = index,
+		.last_char_index = index + len - 1
 	};
 }

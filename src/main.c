@@ -95,20 +95,20 @@ int main() {
 			"lexeme: %-15s - %.*s - %c - %c\n",
 			token_to_c_str(token_array.ptr[i].token_kind),
 			SV_ARG(token_array.ptr[i].lexeme),
-			file_content.c_str[token_array.ptr[i].first_index],
-			file_content.c_str[token_array.ptr[i].last_index]
+			file_content.c_str[token_array.ptr[i].first_char_index],
+			file_content.c_str[token_array.ptr[i].last_char_index]
 		);
 	}
 
 	/* ast* syntax_tree = parse_type(token_array, 0); */
 	/* ast* syntax_tree = parse_function_prototype(token_array, 0); */
 	/* ast* syntax_tree = parse_statement(token_array, 5); */
-	/* ast* syntax_tree = parse_function_definition(token_array, 0); */
-	/* print_ast(syntax_tree); */
+	ast* syntax_tree = parse_function_definition(token_array, 0);
+	print_ast(syntax_tree);
 
-	/* code_gen(syntax_tree); */
+	code_gen(syntax_tree);
 	
-	/* free_ast(syntax_tree); */
+	free_ast(syntax_tree);
 	free(token_array.ptr);
 	free_string(file_content);
 	free_string(file_name);

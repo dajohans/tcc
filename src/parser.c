@@ -50,6 +50,13 @@
  * printf("test node deref: %d\n", container_of(testnode, node, data)->x);
  */
 
+ /* TODO: Perhaps switch to EBNF (Extended Backus-Naur Form) instead
+  * of standard context free grammar style, since EBNF allows syntactic
+  * suger like * or + for repetition. So EBNF should allow all statements
+  * in a statement_list to be at the same depth in the tree, unlike
+  * standard context free grammar notation.
+  */
+
 
 void free_ast_helper(ast* syntax_tree) {
 	if(syntax_tree == NULL) {
@@ -91,19 +98,37 @@ char* grammer_token_to_c_str(int32_t token) {
 	return str;
 }
 
-ast* init_ast_node(int32_t language_construct) {
+ast* init_ast_syntax_node(syntax_kind kind, int64_t first, int64_t last) {
 	ast* node = malloc(sizeof(*node));
 	if(node == NULL) {
 		log_error("Failed to allocate memory for abstract syntax tree");
 		return NULL;
 	}
-	node->language_construct = language_construct;
+	node->kind = NON_TERMINAL;
+	node->node.syntax = (syntax_construct) {
+		.construct = kind,
+		.first_char_index = first,
+		.last_char_index = last
+	};
 	node->children = NULL;
 	node->children_count = -1;
 	return node;
 }
 
-ast* parse_function_definition(int32_ptr tokens, int64_t index) {
+ast* init_ast_token_node(token lexical_token) {
+	ast* node = malloc(sizeof(*node));
+	if(node == NULL) {
+		log_error("Failed to allocate memory for abstract syntax tree");
+		return NULL;
+	}
+	node->kind = TERMINAL;
+	node->node.lex_token = lexical_token;
+	node->children = NULL;
+	node->children_count = -1;
+	return node;
+}
+
+ast* parse_function_definition(token_ptr tokens, int64_t index) {
 	const int64_t rule_len = 4;
 	if(index + rule_len >= tokens.len) {
 		return NULL;
@@ -114,40 +139,44 @@ ast* parse_function_definition(int32_ptr tokens, int64_t index) {
 	}
 	ast* statement_node = parse_statement(tokens, index + function_prototype_node->children_count + 1);
 	if(statement_node == NULL) {
-		free(function_prototype_node);
+		free_ast(function_prototype_node);
 		return NULL;
 	}
-	if(tokens.ptr[index + function_prototype_node->children_count] != CURLY_OPEN ||
-	tokens.ptr[index + function_prototype_node->children_count + 1 + statement_node->children_count] != CURLY_CLOSE) {
+	if(tokens.ptr[index + function_prototype_node->children_count].token_kind != CURLY_OPEN ||
+	tokens.ptr[index + function_prototype_node->children_count + 1 + statement_node->children_count].token_kind != CURLY_CLOSE) {
 		return NULL;
 	}
-	ast* curly_open_node = init_ast_node(CURLY_OPEN);
+	ast* curly_open_node = init_ast_token_node(tokens.ptr[index + function_prototype_node->children_count]);
 	if(curly_open_node == NULL) {
-		free(function_prototype_node);
+		free_ast(function_prototype_node);
 		return NULL;
 	}
-	ast* curly_close_node = init_ast_node(CURLY_CLOSE);
+	ast* curly_close_node = init_ast_token_node(tokens.ptr[index + function_prototype_node->children_count + 1 + statement_node->children_count]);
 	if(curly_close_node == NULL) {
-		free(function_prototype_node);
-		free(curly_open_node);
-		free(statement_node);
+		free_ast(function_prototype_node);
+		free_ast(curly_open_node);
+		free_ast(statement_node);
 		return NULL;
 	}
-	ast* function_definition_node = init_ast_node(FUNCTION_DEFINITION);
+	ast* function_definition_node = init_ast_syntax_node(
+		FUNCTION_DEFINITION,
+		function_prototype_node->node.syntax.first_char_index,
+		curly_close_node->node.lex_token.last_char_index
+	);
 	if(function_definition_node == NULL) {
-		free(function_prototype_node);
-		free(curly_open_node);
-		free(statement_node);
-		free(curly_close_node);
+		free_ast(function_prototype_node);
+		free_ast(curly_open_node);
+		free_ast(statement_node);
+		free_ast(curly_close_node);
 		return NULL;
 	}
 	function_definition_node->children = malloc(rule_len * sizeof(*function_prototype_node->children));
 	if(function_definition_node->children == NULL) {
-		free(function_prototype_node);
-		free(curly_open_node);
-		free(statement_node);
-		free(curly_close_node);
-		free(function_definition_node);
+		free_ast(function_prototype_node);
+		free_ast(curly_open_node);
+		free_ast(statement_node);
+		free_ast(curly_close_node);
+		free_ast(function_definition_node);
 		log_error("Failed to allocate memory for abstract syntax tree");
 		return NULL;
 	}
@@ -159,7 +188,7 @@ ast* parse_function_definition(int32_ptr tokens, int64_t index) {
 	return function_definition_node;
 }
 
-ast* parse_function_prototype(int32_ptr tokens, int64_t index) {
+ast* parse_function_prototype(token_ptr tokens, int64_t index) {
 	const int64_t rule_len = 4;
 	if(index + rule_len >= tokens.len){
 		return NULL;
@@ -168,45 +197,49 @@ ast* parse_function_prototype(int32_ptr tokens, int64_t index) {
 	if(return_type_node == NULL) {
 		return NULL;
 	}
-	if(tokens.ptr[index + return_type_node->children_count] != IDENTIFIER ||
-	tokens.ptr[index + return_type_node->children_count + 1] != PAREN_OPEN ||
-	tokens.ptr[index + return_type_node->children_count + 2] != PAREN_CLOSE) {
+	if(tokens.ptr[index + return_type_node->children_count].token_kind != IDENTIFIER ||
+	tokens.ptr[index + return_type_node->children_count + 1].token_kind != PAREN_OPEN ||
+	tokens.ptr[index + return_type_node->children_count + 2].token_kind != PAREN_CLOSE) {
 		return NULL;
 	}
-	ast* name_node = init_ast_node(IDENTIFIER);
+	ast* name_node = init_ast_token_node(tokens.ptr[index + return_type_node->children_count]);
 	if(name_node == NULL) {
-		free(return_type_node);
+		free_ast(return_type_node);
 		return NULL;
 	}
-	ast* paren_open_node = init_ast_node(PAREN_OPEN);
+	ast* paren_open_node = init_ast_token_node(tokens.ptr[index + return_type_node->children_count + 1]);
 	if(paren_open_node == NULL) {
-		free(return_type_node);
-		free(name_node);
+		free_ast(return_type_node);
+		free_ast(name_node);
 		return NULL;
 	}
-	ast* paren_close_node = init_ast_node(PAREN_CLOSE);
+	ast* paren_close_node = init_ast_token_node(tokens.ptr[index + return_type_node->children_count + 2]);
 	if(paren_close_node == NULL) {
-		free(return_type_node);
-		free(name_node);
-		free(paren_open_node);
+		free_ast(return_type_node);
+		free_ast(name_node);
+		free_ast(paren_open_node);
 		return NULL;
 	}
 	
-	ast* function_prototype_node = init_ast_node(FUNCTION_PROTOTYPE);
+	ast* function_prototype_node = init_ast_syntax_node(
+		FUNCTION_PROTOTYPE,
+		return_type_node->node.syntax.first_char_index,
+		paren_close_node->node.lex_token.last_char_index
+	);
 	if(function_prototype_node == NULL) {
-		free(return_type_node);
-		free(name_node);
-		free(paren_open_node);
-		free(paren_close_node);
+		free_ast(return_type_node);
+		free_ast(name_node);
+		free_ast(paren_open_node);
+		free_ast(paren_close_node);
 		return NULL;
 	}
 	function_prototype_node->children = malloc(rule_len * sizeof(*function_prototype_node->children));
 	if(function_prototype_node->children == NULL) {
-		free(return_type_node);
-		free(name_node);
-		free(paren_open_node);
-		free(paren_close_node);
-		free(function_prototype_node);
+		free_ast(return_type_node);
+		free_ast(name_node);
+		free_ast(paren_open_node);
+		free_ast(paren_close_node);
+		free_ast(function_prototype_node);
 		log_error("Failed to allocate memory for abstract syntax tree");
 		return NULL;
 	}
@@ -218,45 +251,48 @@ ast* parse_function_prototype(int32_ptr tokens, int64_t index) {
 	return function_prototype_node;
 }
 
-ast* parse_statement(int32_ptr tokens, int64_t index) {
+ast* parse_statement(token_ptr tokens, int64_t index) {
 	const int64_t rule_len = 3;
 	if(index + rule_len >= tokens.len) {
 		return NULL;
 	}
-	if(tokens.ptr[index] != KEYWORD_RETURN ||
-	tokens.ptr[index + 1] != NUMBER ||
-	tokens.ptr[index + 2] != SEMICOLON) {
-		printf("he2k\n");
+	if(tokens.ptr[index].token_kind != KEYWORD_RETURN ||
+	tokens.ptr[index + 1].token_kind != NUMBER ||
+	tokens.ptr[index + 2].token_kind != SEMICOLON) {
 		return NULL;
 	}
-	ast* keyword_return_node = init_ast_node(KEYWORD_RETURN);
+	ast* keyword_return_node = init_ast_token_node(tokens.ptr[index]);
 	if(keyword_return_node == NULL) {
 		return NULL;
 	}
-	ast* number_node = init_ast_node(NUMBER);
+	ast* number_node = init_ast_token_node(tokens.ptr[index + 1]);
 	if(number_node == NULL) {
-		free(keyword_return_node);
+		free_ast(keyword_return_node);
 		return NULL;
 	}
-	ast* semicolon_node = init_ast_node(SEMICOLON);
+	ast* semicolon_node = init_ast_token_node(tokens.ptr[index + 2]);
 	if(semicolon_node == NULL) {
-		free(keyword_return_node);
-		free(number_node);
+		free_ast(keyword_return_node);
+		free_ast(number_node);
 		return NULL;
 	}
-	ast* statement_node = init_ast_node(STATEMENT);
+	ast* statement_node = init_ast_syntax_node(
+		STATEMENT,
+		tokens.ptr[index].first_char_index,
+		tokens.ptr[index + 2].last_char_index
+	);
 	if(statement_node == NULL) {
-		free(keyword_return_node);
-		free(number_node);
-		free(semicolon_node);
+		free_ast(keyword_return_node);
+		free_ast(number_node);
+		free_ast(semicolon_node);
 		return NULL;
 	}
 	statement_node->children = malloc(rule_len * sizeof(*statement_node->children));
 	if(statement_node->children == NULL) {
-		free(keyword_return_node);
-		free(number_node);
-		free(semicolon_node);
-		free(statement_node);
+		free_ast(keyword_return_node);
+		free_ast(number_node);
+		free_ast(semicolon_node);
+		free_ast(statement_node);
 		log_error("Failed to allocate memory for abstract syntax tree");
 		return NULL;
 	}
@@ -267,26 +303,30 @@ ast* parse_statement(int32_ptr tokens, int64_t index) {
 	return statement_node;
 }
 
-ast* parse_type(int32_ptr tokens, int64_t index) {
+ast* parse_type(token_ptr tokens, int64_t index) {
 	if(index >= tokens.len) {
 		return NULL;
 	}
-	if(tokens.ptr[index] != KEYWORD_INT) {
+	if(tokens.ptr[index].token_kind != KEYWORD_INT) {
 		return NULL;
 	}
-	ast* keyword_int_node = init_ast_node(KEYWORD_INT);
+	ast* keyword_int_node = init_ast_token_node(tokens.ptr[index]);
 	if(keyword_int_node == NULL) {
 		return NULL;
 	}
-	ast* type_node = init_ast_node(TYPE);
+	ast* type_node = init_ast_syntax_node(
+		TYPE,
+		keyword_int_node->node.lex_token.first_char_index,
+		keyword_int_node->node.lex_token.last_char_index
+	);
 	if(type_node == NULL) {
-		free(keyword_int_node);
+		free_ast(keyword_int_node);
 		return NULL;
 	}
 	type_node->children = malloc(sizeof(*type_node->children));
 	if(type_node->children == NULL) {
-		free(keyword_int_node);
-		free(type_node);
+		free_ast(keyword_int_node);
+		free_ast(type_node);
 		log_error("Failed to allocate memory for abstract syntax tree");
 		return NULL;
 	}
@@ -299,10 +339,10 @@ void print_ast_helper(ast* syntax_tree, int64_t padding_count) {
 	for(int64_t i = 0; i < padding_count; i++) {
 		printf("  ");
 	}
-	if(syntax_tree->children_count >= 1) {
-		printf("%s\n", grammer_token_to_c_str(syntax_tree->language_construct));
+	if(syntax_tree->kind == NON_TERMINAL) {
+		printf("%s\n", grammer_token_to_c_str(syntax_tree->node.syntax.construct));
 	} else {
-		printf("%s\n", token_to_c_str(syntax_tree->language_construct));
+		printf("%s - %.*s\n", token_to_c_str(syntax_tree->node.lex_token.token_kind), SV_ARG(syntax_tree->node.lex_token.lexeme));
 	}
 	for(int64_t i = 0; i < syntax_tree->children_count; i++) {
 		print_ast_helper(syntax_tree->children[i], padding_count + 1);

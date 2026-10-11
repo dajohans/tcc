@@ -28,9 +28,12 @@ enum Token_Kinds {
 typedef struct token {
 	string_view lexeme;
 	int32_t token_kind;
-	int64_t first_index;
-	int64_t last_index;
-} token; // TODO: Change name to token
+	int64_t first_char_index;
+	int64_t last_char_index;
+	// If char* str contains the source code file, then
+	// str[first_char_index] is the first character of the lexeme and
+	// str[last_char_index] is the last character.
+} token;
 
 typedef struct token_ptr {
 	token* ptr;

@@ -33,14 +33,20 @@ string* ast_to_assembly(ast* syntax_tree) {
 	ast* statement_node = syntax_tree->children[2];
 	if(syntax_tree->kind == NON_TERMINAL && syntax_tree->node.syntax.construct == FUNCTION_DEFINITION) {
 		// NOTE: Assume for now that this is main()
-		main_handling1 = set_string(
-			"call main\n" \
+		main_handling1 = str_append_sv(
+			set_string("call "),
+			syntax_tree->children[0]->children[1]->node.lex_token.lexeme
+		);
+		main_handling1 = str_append_c_str(
+			main_handling1,
+			"\n"
 			"mov rdi, rax\n"
 		);
 		if(main_handling1.cap < 0) {
 			return NULL;
 		}
-		impl_handling1 = set_string("main:\n");
+		impl_handling1 = str_append_c_str(set_string_from_sv(syntax_tree->children[0]->children[1]->node.lex_token.lexeme), ":\n");
+		/* impl_handling1 = set_string("main:\n"); */
 		if(impl_handling1.cap < 0) {
 			free_string(main_handling1);
 			return NULL;
@@ -48,7 +54,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 		if(statement_node->kind == NON_TERMINAL && statement_node->node.syntax.construct == STATEMENT) {
 		// NOTE: Assume for now that this is a return statement
 			impl_handling2 = set_string(
-				"mov rax, 0\n" \
+				"mov rax, 0\n"
 				"ret\n"
 			);
 			if(impl_handling2.cap < 0) {

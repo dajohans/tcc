@@ -23,6 +23,10 @@ string append_string(string str, string end) {
 	}
 	if(str.len + end.len >= str.cap - 1) {
 		string tmp = alloc_string(str.cap + end.len);
+		if(tmp.cap < 0) {
+			log_error("Failed to append string");
+			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		}
 		for(int64_t i = 0; i < str.len; i++) {
 			tmp.c_str[i] = str.c_str[i];
 		}
@@ -40,6 +44,9 @@ string append_string(string str, string end) {
 }
 
 int64_t c_str_len(char* str){
+	if(str == NULL) {
+		return 0;
+	}
 	int64_t i = 0;
 	while(str[i] != '\0') {
 		i++;
@@ -84,6 +91,20 @@ string set_string(char* str){
 	return tmp;
 }
 
+string set_string_from_sv(string_view sv) {
+	string tmp = alloc_string(sv.len + 1);
+	if(tmp.cap == -1) {
+		log_error("Failed to set string content");
+		return tmp;
+	}
+	tmp.len = tmp.cap - 1;
+	for(int64_t i = 0; i < tmp.len; i++) {
+		tmp.c_str[i] = sv.ptr[i];
+	}
+	tmp.c_str[tmp.len] = '\0';
+	return tmp;
+}
+
 string_view set_sv(string str, int64_t start_offset, int64_t len) {
 	if(str.cap < 0) {
 		return (string_view) { .ptr = NULL, .len = -1 };
@@ -96,6 +117,53 @@ string_view set_sv_ptr(char* str, int64_t len) {
 		return (string_view) { .ptr = NULL, .len = -1 };
 	}
 	return (string_view) { .ptr = str, .len = len };
+}
+
+string str_append(string str1, string str2) {
+	return str_append_c_str(str1, str2.c_str);
+}
+
+string str_append_c_str(string str, char* c_str) {
+	string_view sv = (string_view) { .ptr = c_str, .len = c_str_len(c_str) };
+	return str_append_sv(str, sv);
+}
+
+string str_append_sv(string str, string_view sv) {
+	if(str.cap < 0) {
+		string tmp = alloc_string(sv.len + 1);
+		if(tmp.cap < 0) {
+			log_error("Failed to append string");
+			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		}
+		for(int64_t i = 0; i < sv.len; i++) {
+			tmp.c_str[i] = sv.ptr[i];
+		}
+		tmp.len = sv.len;
+		tmp.c_str[tmp.len] = '\0';
+		str = tmp;
+	}
+	if(sv.len <= 0) {
+		return str;
+	}
+	if(str.len + sv.len >= str.cap) {
+		string tmp = alloc_string(str.len + sv.len + 1);
+		if(tmp.cap < 0) {
+			log_error("Failed to append string");
+			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		}
+		for(int64_t i = 0; i < str.len; i++) {
+			tmp.c_str[i] = str.c_str[i];
+		}
+		tmp.len = str.len;
+		free_string(str);
+		str = tmp;
+	}
+	for(int64_t i = 0; i < sv.len; i++) {
+		str.c_str[str.len + i] = sv.ptr[i];
+	}
+	str.len = str.len + sv.len;
+	str.c_str[str.len] = '\0';
+	return str;
 }
 
 bool str_cmp(string str_1, string str_2) {

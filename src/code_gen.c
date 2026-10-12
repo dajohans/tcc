@@ -32,11 +32,16 @@ string* ast_to_assembly(ast* syntax_tree) {
 	// implementation to properly max the abstract syntax tree.
 	ast* statement_node = syntax_tree->children[2];
 	if(syntax_tree->kind == NON_TERMINAL && syntax_tree->node.syntax.construct == FUNCTION_DEFINITION) {
-		// NOTE: Assume for now that this is main()
 		main_handling1 = str_append_sv(
 			set_string("call "),
 			syntax_tree->children[0]->children[1]->node.lex_token.lexeme
 		);
+		// TODO: Add functions to easily pick out certain language
+		// constructs from the syntax tree. For example, if I know
+		// that syntax_tree is a function definition, make a function
+		// to get the return type from its function prototype.
+		// Similarly, have a function which obtains the return value
+		// in the return statement below.
 		main_handling1 = str_append_c_str(
 			main_handling1,
 			"\n"
@@ -46,15 +51,20 @@ string* ast_to_assembly(ast* syntax_tree) {
 			return NULL;
 		}
 		impl_handling1 = str_append_c_str(set_string_from_sv(syntax_tree->children[0]->children[1]->node.lex_token.lexeme), ":\n");
-		/* impl_handling1 = set_string("main:\n"); */
 		if(impl_handling1.cap < 0) {
 			free_string(main_handling1);
 			return NULL;
 		}
 		if(statement_node->kind == NON_TERMINAL && statement_node->node.syntax.construct == STATEMENT) {
-		// NOTE: Assume for now that this is a return statement
-			impl_handling2 = set_string(
-				"mov rax, 0\n"
+		// TODO: Now we assume that this is a return statement. That
+		// needs to change
+			impl_handling2 = str_append_sv(
+				set_string("mov rax, "),
+				syntax_tree->children[2]->children[1]->node.lex_token.lexeme
+			);
+			impl_handling2 = str_append_c_str(
+				impl_handling2,
+				"\n"
 				"ret\n"
 			);
 			if(impl_handling2.cap < 0) {

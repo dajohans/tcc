@@ -5,32 +5,6 @@
 #include "lexer.h"
 #include "parser.h"
 
-/* The goal is to parse the following
- *     int main() {
- *         return 0;
- *     }
- * To to this, I suppose we need the rules:
- *     type -> keyword_int
- *     statement -> keyword_return + number + semicolon
- *     statement_list -> statement + statement_list
- *     function_prototype -> type + identifier + paren_open + paren_close
- *     function_definition -> function_prototype + curly_open + statement_list + curle_close
- * I think the idea will be to build an abstract syntax tree as
- * follows. Each left-hand side in the grammer rule is a node, and it
- * will have one child for each term in the right-hand side. If the
- * term in the right-hand side is a lexeme such as keyword_return then
- * that child is a leaf node, and if the term is itself a left-hand
- * side of some rule then it will not be a leaf node.
- *
- * All the statements in a given scope will be children of the
- * language construct which owns the scope (if-statement, for-loop,
- * function definition etc). The top level node does not correspond to
- * any language construct in the file and may be thought of as
- * corresponding to the file itself. The children of the top-level
- * node are things like include directives, function declarations and
- * definitions, global variable definitions.
- */
-
 /* TODO: Think about doing tree structures with the following trick
  * from the Linux kernel:
  * #define container_of(ptr, member, type) ((type*)((size_t)ptr-(size_t)&((type*)0)->member))
@@ -50,13 +24,28 @@
  * printf("test node deref: %d\n", container_of(testnode, node, data)->x);
  */
 
- /* TODO: Perhaps switch to EBNF (Extended Backus-Naur Form) instead
-  * of standard context free grammar style, since EBNF allows syntactic
-  * suger like * or + for repetition. So EBNF should allow all statements
-  * in a statement_list to be at the same depth in the tree, unlike
-  * standard context free grammar notation.
+ /* TODO: Instead of defining each grammar rule with its own C
+  * function, define the grammar rules in an array using something
+  * like EBNF notation for context free grammars:
+  *     int [][] = {
+  *         { TYPE, KEYWORD_INT },
+  *         { STATEMENT, KEYWORD_RETURN, NUMBER, SEMICOLON },
+  *         { STATEMENT_LIST, EBNF_REPEAT_BEGIN, STATEMENT, EBNF_REPEAT_END },
+  *         ...
+  *         ...
+  *     }
+  * The idea with here is that the leftmost value is the name of a
+  * grammar rule, and then comes the right-hand side of that rule. By
+  * defining special constants like EBNF_REPEAT_BEGIN,
+  * EBNF_REPEAT_END, EBNF_SEPARATOR then we could get functionality
+  * like [statement] meaning repetition of statemet and
+  * keyword_int | keyword_float meaning either an int or a float. So
+  * EBNF_REPEAT_BEGIN is [, EBNF_REPEAT_END is] and EBNF_SEPARATOR is
+  * |. While it is awkward to write EBNF with words like this, it's
+  * better than implementing separate functions for each grammar rule
+  * and it makes parser generation a little bit like when using YACC
+  * or Bison but without actually using YACC or Bison.
   */
-
 
 void free_ast_helper(ast* syntax_tree) {
 	if(syntax_tree == NULL) {

@@ -35,9 +35,9 @@ Linking as well as compilation of assembly to binary are out of scope.
 
 - [x] Adapt the minimal viable product implementation to not be hard coded for the example C program.
     - [x] Enable substring handling by something like C++'s string_view
-    - [x] Make the lexical tokens and/or abstract syntax tree nodes contain the substring they correspond to
-    - [x] Add semantic analysis step: check that the return value matches the return type by checking the substrings
-    - [x] Adapt the code generation to obtain the function name main and the return value 0 from the substrings stored in the AST
+    - [x] Make the lexical tokens and abstract syntax tree nodes contain their corresponding lexemes as a string_view
+    - [x] Add semantic analysis step: check the function return type in the AST matches the type of the actual return value
+    - [x] Adapt the code generation to obtain the function name main and the return value 0 from the lexemes stored in the AST
 - [x] Implement the most minimal viable product possible.
 The compiler can compile the following simple C program to assembly
 ```C

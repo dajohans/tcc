@@ -3,7 +3,7 @@ CFLAGS = -std=c2x -Wall -Wextra -g -fsanitize=address,undefined,leak,pointer-com
 
 default: out/main
 
-out/main: out/main.o out/string.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o out/code_gen.o
+out/main: out/main.o out/string.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o out/code_gen.o out/semantic.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 out/%.o: src/%.c

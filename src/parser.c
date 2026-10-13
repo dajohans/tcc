@@ -296,7 +296,9 @@ ast* parse_type(token_ptr tokens, int64_t index) {
 	if(index >= tokens.len) {
 		return NULL;
 	}
-	if(tokens.ptr[index].token_kind != KEYWORD_INT) {
+	if(!(tokens.ptr[index].token_kind == KEYWORD_INT || tokens.ptr[index].token_kind == KEYWORD_FLOAT)) {
+		// TODO: Somehow make this condition use a table or something
+		// which contains all types known in a scope.
 		return NULL;
 	}
 	ast* keyword_int_node = init_ast_token_node(tokens.ptr[index]);

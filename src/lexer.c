@@ -11,14 +11,21 @@ typedef struct keyword_token {
 } keyword_token;
 
 const keyword_token keyword_token_list[] = {
-	// TODO add more keywords
-	(keyword_token) {
-		.lexeme = (string) { .c_str = "return", .len = C_STR_LEN("return"), .cap = C_STR_LEN("return") + 1 },
-		.token_kind = KEYWORD_RETURN
-	},
+	// TODO: Somehow consolidate this list and the enum with the
+	// corresponding integer codes in lexer.h. I now tried to extend
+	// the keyword list, and came across strange bugs caused by me not
+	// remembering to update this list accordingly...
 	(keyword_token) {
 		.lexeme = (string) { .c_str = "int", .len = C_STR_LEN("int"), .cap = C_STR_LEN("int") + 1 },
 		.token_kind = KEYWORD_INT
+	},
+	(keyword_token) {
+		.lexeme = (string) { .c_str = "float", .len = C_STR_LEN("float"), .cap = C_STR_LEN("float") + 1 },
+		.token_kind = KEYWORD_FLOAT
+	},
+	(keyword_token) {
+		.lexeme = (string) { .c_str = "return", .len = C_STR_LEN("return"), .cap = C_STR_LEN("return") + 1 },
+		.token_kind = KEYWORD_RETURN
 	}
 };
 
@@ -120,6 +127,9 @@ char* token_to_c_str(int32_t token) {
 			break;
 		case KEYWORD_INT:
 			str = "KEYWORD_INT";
+			break;
+		case KEYWORD_FLOAT:
+			str = "KEYWORD_FLOAT";
 			break;
 		case KEYWORD_RETURN:
 			str = "KEYWORD_RETURN";

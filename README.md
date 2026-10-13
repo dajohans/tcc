@@ -29,6 +29,8 @@ Linking as well as compilation of assembly to binary are out of scope.
 
 ## Current goal
 
+- [ ] Add unit testing and integration testing
+
 ## Completed goals
 
 - [x] Adapt the minimal viable product implementation to not be hard coded for the example C program.

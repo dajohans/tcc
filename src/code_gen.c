@@ -3,7 +3,7 @@
 
 #include "code_gen.h"
 #include "parser.h"
-#include "string.h"
+#include "string_view.h"
 
 #define ASSEMBLY_PREAMBLE_1 \
 	".intel_syntax noprefix\n" \

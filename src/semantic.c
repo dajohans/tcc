@@ -2,7 +2,7 @@
 
 #include "lexer.h"
 #include "parser.h"
-#include "string.h"
+#include "string_view.h"
 
 typedef struct type_info {
 	int64_t id;

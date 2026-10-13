@@ -3,13 +3,20 @@ CFLAGS = -std=c2x -Wall -Wextra -g -fsanitize=address,undefined,leak,pointer-com
 
 default: out/main
 
-out/main: out/main.o out/string.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o out/code_gen.o out/semantic.o
+out/main: out/main.o out/string_view.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o out/code_gen.o out/semantic.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 out/%.o: src/%.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-PHONY: clean run
+PHONY: clean run tests
+
+tests: tests/test_main
+	./$<
+	rm -f $<
+
+tests/test_main: tests/test_main.c
+	gcc $(CFLAGS) -I./src $< -o $@
 
 assembly:
 	gcc -c a.s -o a.o

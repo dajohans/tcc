@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "string.h"
+#include "string_view.h"
 #include "error.h"
 
 string alloc_string(int64_t cap) {

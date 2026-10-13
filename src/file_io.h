@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "string.h"
+#include "string_view.h"
 
 int get_file_size(FILE* fp);
 string read_file_c_str(const char* file_name);

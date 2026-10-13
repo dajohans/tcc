@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "pointer.h"
-#include "string.h"
+#include "string_view.h"
 
 enum Token_Kinds {
 	LEXEME_ERROR = -1,

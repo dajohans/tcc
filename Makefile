@@ -12,7 +12,9 @@ out/%.o: src/%.c
 PHONY: clean run tests
 
 tests: tests/test_main
-	./$<
+# We test for malloc returning null, so need to tell the sanitizer to
+# not terminate the program when that happens
+	ASAN_OPTIONS=allocator_may_return_null=1 ./$<
 	rm -f $<
 
 tests/test_main: tests/test_main.c out/string_view.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o out/code_gen.o out/semantic.o

@@ -25,7 +25,7 @@ string append_string(string str, string end) {
 	if(end.len <= 0) {
 		return str;
 	}
-	if(str.len + end.len >= str.cap - 1) {
+	if(str.len + end.len > str.cap - 1) {
 		string tmp = alloc_string(str.cap + end.len);
 		if(tmp.cap < 0) {
 			log_error("Failed to append string");

@@ -6,6 +6,10 @@
 #include "error.h"
 
 string alloc_string(int64_t cap) {
+	if(cap <= 0) {
+		// This was added because of testing
+		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	}
 	string tmp = (string){ .c_str = NULL, .len = -1, .cap = -1};
 	tmp.c_str = malloc(cap * sizeof(*tmp.c_str));
 	if(tmp.c_str == NULL) {
@@ -71,8 +75,9 @@ string concat_string(string str1, string str2) {
 	return tmp;
 }
 
-void free_string(string str) {
+void free_string(string str) { // TODO: This needs to be pointer argument for all of the below assignments to be meaningful
 	free(str.c_str);
+	str.c_str = NULL; // This was found when defining tests
 	str.len = -1;
 	str.cap = -1;
 }

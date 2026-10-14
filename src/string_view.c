@@ -75,19 +75,20 @@ string concat_string(string str1, string str2) {
 	return tmp;
 }
 
-void free_string(string* str) {
+bool free_string(string* str) {
 	if(str == NULL) {
 		log_error("Unable to free string pointer to NULL");
-		return;
+		return false;
 	}
 	if(str->c_str == NULL) {
 		log_error("Attempted double free of string");
-		return;
+		return false;
 	}
 	free(str->c_str);
 	str->c_str = NULL;
 	str->len = -1;
 	str->cap = -1;
+	return true;
 }
 
 string set_string(char* str){
@@ -236,9 +237,13 @@ string_view sv_split_at_char(string_view *sv, char c) {
 	return result;
 }
 
-void sv_trim(string_view* sv) {
-	sv_trim_left(sv);
-	sv_trim_right(sv);
+bool sv_trim(string_view* sv) {
+	string_view ret_1 = sv_trim_left(sv);
+	string_view ret_2 = sv_trim_right(sv);
+	if(ret_1.ptr == NULL || ret_2.ptr == NULL) {
+		return false;
+	}
+	return true;
 }
 
 string_view sv_trim_left(string_view* sv) {

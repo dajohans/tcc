@@ -25,7 +25,7 @@ bool return_type_check(ast* syntax_tree) {
 	}
 	string float_str = set_string("float");
 	if(float_str.cap < 0) {
-		free_string(int_str);
+		free_string(&int_str);
 		return false;
 	}
 	string_view int_sv = set_sv_ptr(int_str.c_str, int_str.len);
@@ -63,8 +63,8 @@ bool return_type_check(ast* syntax_tree) {
 		}
 		
 	}
-	free_string(int_str);
-	free_string(float_str);
+	free_string(&int_str);
+	free_string(&float_str);
 	if(function_return_type.id != return_value_type.id) {
 		return false;
 	}

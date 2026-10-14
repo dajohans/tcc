@@ -30,7 +30,7 @@ string alloc_string(int64_t cap);
 string append_string(string str, string end);
 int64_t c_str_len(char* str);
 string concat_string(string str1, string str2);
-void free_string(string str);
+void free_string(string* str);
 string set_string(char* str);
 string set_string_from_sv(string_view sv);
 string_view set_sv(string str, int64_t start_offset, int64_t len);

@@ -36,7 +36,7 @@ string append_string(string str, string end) {
 		}
 		tmp.len = str.len;
 		tmp.c_str[tmp.len] = '\0';
-		free_string(str);
+		free_string(&str);
 		str = tmp;
 	}
 	for(int64_t i = 0; i < end.len; i++) {
@@ -75,11 +75,19 @@ string concat_string(string str1, string str2) {
 	return tmp;
 }
 
-void free_string(string str) { // TODO: This needs to be pointer argument for all of the below assignments to be meaningful
-	free(str.c_str);
-	str.c_str = NULL; // This was found when defining tests
-	str.len = -1;
-	str.cap = -1;
+void free_string(string* str) {
+	if(str == NULL) {
+		log_error("Unable to free string pointer to NULL");
+		return;
+	}
+	if(str->c_str == NULL) {
+		log_error("Attempted double free of string");
+		return;
+	}
+	free(str->c_str);
+	str->c_str = NULL;
+	str->len = -1;
+	str->cap = -1;
 }
 
 string set_string(char* str){
@@ -160,7 +168,7 @@ string str_append_sv(string str, string_view sv) {
 			tmp.c_str[i] = str.c_str[i];
 		}
 		tmp.len = str.len;
-		free_string(str);
+		free_string(&str);
 		str = tmp;
 	}
 	for(int64_t i = 0; i < sv.len; i++) {

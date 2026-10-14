@@ -52,7 +52,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 		}
 		impl_handling1 = str_append_c_str(set_string_from_sv(syntax_tree->children[0]->children[1]->node.lex_token.lexeme), ":\n");
 		if(impl_handling1.cap < 0) {
-			free_string(main_handling1);
+			free_string(&main_handling1);
 			return NULL;
 		}
 		if(statement_node->kind == NON_TERMINAL && statement_node->node.syntax.construct == STATEMENT) {
@@ -68,29 +68,29 @@ string* ast_to_assembly(ast* syntax_tree) {
 				"ret\n"
 			);
 			if(impl_handling2.cap < 0) {
-				free_string(main_handling1);
-				free_string(impl_handling1);
+				free_string(&main_handling1);
+				free_string(&impl_handling1);
 				return NULL;
 			}
 		}
 	}
 	string* ret = malloc(2 * sizeof(*ret));
 	if(ret == NULL) {
-		free_string(main_handling1);
-		free_string(impl_handling1);
-		free_string(impl_handling2);
+		free_string(&main_handling1);
+		free_string(&impl_handling1);
+		free_string(&impl_handling2);
 		return NULL;
 	}
 	string impl = concat_string(impl_handling1, impl_handling2);
 	if(impl.cap < 0) {
-		free_string(main_handling1);
-		free_string(impl_handling1);
-		free_string(impl_handling2);
+		free_string(&main_handling1);
+		free_string(&impl_handling1);
+		free_string(&impl_handling2);
 		free(ret);
 		return NULL;
 	}
-	free_string(impl_handling1);
-	free_string(impl_handling2);
+	free_string(&impl_handling1);
+	free_string(&impl_handling2);
 	ret[0] = main_handling1;
 	ret[1] = impl;
 	return ret;
@@ -113,8 +113,8 @@ void code_gen(ast* syntax_tree) {
 			impl[0].c_str, // main handling string: Code for calling main and handling its return value goes here
 			impl[1].c_str // function implementation string: Code which implements all functions goes here, including main()
 		);
-	    free_string(impl[0]);
-	    free_string(impl[1]);
+	    free_string(&impl[0]);
+	    free_string(&impl[1]);
 	    free(impl);
 	}
 	fclose(fp);

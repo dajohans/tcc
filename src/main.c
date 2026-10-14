@@ -58,7 +58,7 @@ int main() {
 	string file_content = read_file(file_name);
 	/* string file_content = read_file_c_str("test-file"); */
 	if(file_content.cap == 0) {
-		free_string(file_name);
+		free_string(&file_name);
 		return 1;
 	}
 
@@ -114,7 +114,7 @@ int main() {
 	
 	free_ast(syntax_tree);
 	free(token_array.ptr);
-	free_string(file_content);
-	free_string(file_name);
+	free_string(&file_content);
+	free_string(&file_name);
 	return 0;
 }

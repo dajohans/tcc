@@ -33,7 +33,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 	ast* statement_node = syntax_tree->children[2];
 	if(syntax_tree->kind == NON_TERMINAL && syntax_tree->node.syntax.construct == FUNCTION_DEFINITION) {
 		main_handling1 = str_append_sv(
-			set_string("call "),
+			make_string("call "),
 			syntax_tree->children[0]->children[1]->node.lex_token.lexeme
 		);
 		// TODO: Add functions to easily pick out certain language
@@ -59,7 +59,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 		// TODO: Now we assume that this is a return statement. That
 		// needs to change
 			impl_handling2 = str_append_sv(
-				set_string("mov rax, "),
+				make_string("mov rax, "),
 				syntax_tree->children[2]->children[1]->node.lex_token.lexeme
 			);
 			impl_handling2 = str_append_c_str(

@@ -7,7 +7,6 @@
 
 string alloc_string(int64_t cap) {
 	if(cap <= 0) {
-		// This was added because of testing
 		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	}
 	string tmp = (string){ .c_str = NULL, .len = -1, .cap = -1};
@@ -91,10 +90,10 @@ bool free_string(string* str) {
 	return true;
 }
 
-string set_string(char* str){
+string make_string(char* str){
 	string tmp = alloc_string(c_str_len(str) + 1);
 	if(tmp.cap == -1) {
-		log_error("Failed to set string content");
+		log_error("Failed to make string");
 		return tmp;
 	}
 	tmp.len = tmp.cap - 1;
@@ -103,6 +102,28 @@ string set_string(char* str){
 	}
 	tmp.c_str[tmp.len] = '\0';
 	return tmp;
+}
+
+void set_string(string* str, char* new) {
+	if(new == NULL) {
+		return;
+	}
+	if(c_str_len(new) > str->cap - 1){
+		string tmp = alloc_string(c_str_len(new) + 1);
+		if(tmp.cap == -1) {
+			log_error("Failed to set string content");
+			return;
+		}
+		free_string(str);
+		str->c_str = tmp.c_str;
+		str->len = tmp.len;
+		str->cap = tmp.cap;
+	}
+	str->len = c_str_len(new);
+	for(int64_t i = 0; i < str->len; i++) {
+		str->c_str[i] = new[i];
+	}
+	str->c_str[str->len] = '\0';
 }
 
 string set_string_from_sv(string_view sv) {
@@ -143,24 +164,11 @@ string str_append_c_str(string str, char* c_str) {
 }
 
 string str_append_sv(string str, string_view sv) {
-	if(str.cap < 0) {
-		string tmp = alloc_string(sv.len + 1);
-		if(tmp.cap < 0) {
-			log_error("Failed to append string");
-			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
-		}
-		for(int64_t i = 0; i < sv.len; i++) {
-			tmp.c_str[i] = sv.ptr[i];
-		}
-		tmp.len = sv.len;
-		tmp.c_str[tmp.len] = '\0';
-		str = tmp;
-	}
 	if(sv.len <= 0) {
 		return str;
 	}
-	if(str.len + sv.len >= str.cap) {
-		string tmp = alloc_string(str.len + sv.len + 1);
+	if(str.len + sv.len > str.cap - 1) {
+		string tmp = alloc_string(str.cap + sv.len);
 		if(tmp.cap < 0) {
 			log_error("Failed to append string");
 			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
@@ -185,13 +193,38 @@ bool str_cmp(string str_1, string str_2) {
 		return false;
 	}
 	bool are_equal = true;
-	for(int64_t i = 0; i < str_1.len; i++) {
+	for(int64_t i = 0; i <= str_1.len; i++) {
 		if(str_1.c_str[i] != str_2.c_str[i]) {
 			are_equal = false;
 			break;
 		}
 	}
 	return are_equal;
+}
+
+string str_realloc(string str, int64_t new_cap) {
+	// NOTE: the string may shrink due to realloc
+	if(new_cap <= 0) {
+		return str;
+	}
+	string tmp = alloc_string(new_cap);
+	if(tmp.cap < 0) {
+		log_error("Failed to reallocate string");
+		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	}
+	int64_t len = 0;
+	if(str.len < tmp.cap - 1) {
+		len = str.len;
+	} else {
+		len = tmp.cap - 1;
+	}
+	for(int64_t i = 0; i < len; i++) {
+		tmp.c_str[i] = str.c_str[i];
+	}
+	free_string(&str);
+	tmp.len = len;
+	tmp.c_str[tmp.len] = '\0';
+	return tmp;
 }
 
 bool sv_cmp(string_view sv1, string_view sv2) {

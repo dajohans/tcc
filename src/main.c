@@ -50,7 +50,7 @@
 int main() {
 	
 	/* string file_name = set_string("test-file-3"); */
-	string file_name = set_string("test-file");
+	string file_name = make_string("test-file");
 	/* string file_name = set_string("test-file-2"); */
 	if(file_name.len == 0) {
 		return 1;

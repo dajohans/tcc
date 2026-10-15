@@ -19,11 +19,11 @@ bool return_type_check(ast* syntax_tree) {
 	// TODO: This table should be initialized elsewhere. Perhaps make
 	// sure the table has a value to signal that there's an error,
 	// probably with .id = -1
-	string int_str = set_string("int");
+	string int_str = make_string("int");
 	if(int_str.cap < 0) {
 		return false;
 	}
-	string float_str = set_string("float");
+	string float_str = make_string("float");
 	if(float_str.cap < 0) {
 		free_string(&int_str);
 		return false;

@@ -2,7 +2,7 @@
 
 #include "string_view.h"
 
-#include "utest.h"
+#include "../lib/utest/utest.h"
 UTEST_STATE(); // Must be used somewhere
 // Source: https://github.com/sheredom/utest.h
 

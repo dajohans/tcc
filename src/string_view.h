@@ -28,11 +28,12 @@ typedef struct string_view {
 
 string alloc_string(int64_t cap);
 string append_string(string str, string end);
-int64_t c_str_len(char* str);
 string concat_string(string str1, string str2);
+bool c_str_cmp(char* str_1, char* str_2);
+int64_t c_str_len(char* str);
 bool free_string(string* str);
 string make_string(char* str);
-void set_string(string* str, char* new);
+string set_string(string str, char* new);
 string set_string_from_sv(string_view sv);
 string_view set_sv(string str, int64_t start_offset, int64_t len);
 string_view set_sv_ptr(char* str, int64_t len);

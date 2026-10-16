@@ -30,6 +30,16 @@ UTEST(string, alloc_string) {
 	free_string(&str_good);
 }
 
+UTEST(string, c_str_cmp) {
+	// Test early return
+	ASSERT_TRUE(c_str_cmp(NULL, "test") == false);
+	// Test non-equal strings
+	ASSERT_TRUE(c_str_cmp("failure", "test") == false);
+	// Test equal strings
+	ASSERT_TRUE(c_str_cmp(NULL, NULL) == true);
+	ASSERT_TRUE(c_str_cmp("test", "test") == true);
+}
+
 UTEST(string, c_str_len) {
 	char str_empty[]  = "";
 	char* str_null = NULL;
@@ -37,6 +47,140 @@ UTEST(string, c_str_len) {
 	ASSERT_TRUE(c_str_len(str_empty) == 0);
 	ASSERT_TRUE(c_str_len(str_null) == 0);
 	ASSERT_TRUE(c_str_len(str_nonempty) == 34);
+}
+
+UTEST(string, concat_string) {
+	string str_null = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	string str_short = make_string("This");
+	string result;
+	// Test first early return
+	result = concat_string(str_null, str_null);
+	ASSERT_TRUE(result.cap == -1);
+	// Test second early return
+	result = concat_string(str_null, str_short);
+	ASSERT_TRUE(str_cmp(result, str_short) == true);
+	ASSERT_TRUE(result.len == str_short.len);
+	ASSERT_TRUE(result.cap == str_short.cap);
+	// Test second early return
+	result = concat_string(str_short, str_null);
+	ASSERT_TRUE(str_cmp(result, str_short) == true);
+	ASSERT_TRUE(result.len == str_short.len);
+	ASSERT_TRUE(result.cap == str_short.cap);
+	// Test failed allocation
+	string str_less_huge = (string) { .c_str = NULL, .len = -1, .cap = 1 };
+	string str_huge = (string) { .c_str = NULL, .len = INT64_MAX, .cap = 1 };
+	result = concat_string(str_less_huge, str_huge);
+	ASSERT_TRUE(result.cap == -1);
+	// Test successful concatenation
+	string ending = make_string(" is a test");
+	string test = make_string("This is a test");
+	result = concat_string(str_short, ending);
+	ASSERT_TRUE(str_cmp(result, test) == true);
+	ASSERT_TRUE(result.len == test.len);
+	ASSERT_TRUE(result.cap == test.cap);
+	ASSERT_TRUE(result.c_str[result.len] == '\0');
+	
+	free_string(&result);
+	free_string(&test);
+	free_string(&ending);
+	free_string(&str_short);
+}
+
+UTEST(string, free_string) {
+	string* null_ptr = NULL;
+	string str_null = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	// Test early returns
+	ASSERT_TRUE(free_string(null_ptr) == false);
+	ASSERT_TRUE(free_string(&str_null) == false);
+
+	string str= alloc_string(10);
+	ASSERT_TRUE(str.cap == 10);
+	// Test successful free
+	ASSERT_TRUE(free_string(&str) == true);
+	ASSERT_TRUE(str.c_str == NULL);
+	ASSERT_TRUE(str.len == -1);
+	ASSERT_TRUE(str.cap == -1);
+}
+
+UTEST(string, make_string) {
+	string result;
+	// Test first early return
+	result = make_string(NULL);
+	ASSERT_TRUE(result.cap == -1);
+	char* c_str = "test";
+	string str = make_string(c_str);
+	ASSERT_TRUE(str.len == c_str_len(c_str));
+	ASSERT_TRUE(str.cap == c_str_len(c_str) + 1);
+	ASSERT_TRUE(c_str_cmp(str.c_str, c_str));
+	free_string(&str);
+}
+
+UTEST(string, set_string) {
+	string str_null = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	string result = set_string(str_null, NULL);
+	// Test early return
+	ASSERT_TRUE(str_cmp(result, str_null));
+	free_string(&result);
+	// Test assignment without reallocation
+	string str_long = make_string("This is a long sentence.");
+	result = set_string(str_long, "Hello there");
+	ASSERT_TRUE(str_cmp(str_long, result) != true);
+	ASSERT_TRUE(c_str_cmp(str_long.c_str, result.c_str) == true);
+	ASSERT_TRUE(str_long.len != result.len);
+	ASSERT_TRUE(str_long.cap == result.cap);
+	// Note: str_cmp fails on early return, since str_long did not get
+	// its .len updated
+	
+	free_string(&str_long);
+}
+
+UTEST(string, set_sv) {
+	string str_null = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	string_view result;
+	// Test first early return
+	result = set_sv(str_null, 1, 1);
+	ASSERT_TRUE(result.ptr == NULL);
+	ASSERT_TRUE(result.len == -1);
+	// Test second early return
+	string str_short = make_string("0123");
+	result = set_sv(str_short, 1, str_short.cap);
+	ASSERT_TRUE(result.len == -1);
+	free_string(&str_short);
+	// Test successful assignment in middle of string
+	string str = make_string("1234567890");
+	string_view sv = (string_view) { .ptr = "67", .len = 2};
+	result = set_sv(str, 5, 2);
+	ASSERT_TRUE(sv_cmp(result, sv));
+	// Test successful assignment up to and including terminating null
+	sv = (string_view) { .ptr = "0", .len = 2};
+	result = set_sv(str, 9, 2);
+	ASSERT_TRUE(sv_cmp(result, sv) == true);
+	
+	free_string(&str);
+}
+
+UTEST(string, set_string_from_sv) {
+	string_view sv_null = (string_view) { .ptr = NULL, .len = -1 };
+	// Test early return
+	string result = set_string_from_sv(sv_null);
+	ASSERT_TRUE(result.c_str == NULL);
+	ASSERT_TRUE(result.len == -1);
+	ASSERT_TRUE(result.cap == -1);
+	// Test empty string_view
+	string_view sv_empty = (string_view) { .ptr = NULL, .len = 0 };
+	result = set_string_from_sv(sv_empty);
+	ASSERT_TRUE(result.c_str[0] == '\0');
+	ASSERT_TRUE(result.len == 0);
+	ASSERT_TRUE(result.cap == 1);
+	free_string(&result);
+	// Test non-empty string_view
+	char* str = "test string";
+	string_view sv_short = (string_view) { .ptr = str, .len = c_str_len(str)};
+	result = set_string_from_sv(sv_short);
+	ASSERT_TRUE(c_str_cmp(result.c_str, str));
+	ASSERT_TRUE(result.len == sv_short.len);
+	ASSERT_TRUE(result.cap == sv_short.len + 1);
+	free_string(&result);
 }
 
 UTEST(string, str_append_sv) {
@@ -231,19 +375,6 @@ UTEST(string, str_cmp) {
 /* 	free_string(&str_large); */
 /* 	free_string(&str_small); */
 /* } */
-
-UTEST(string, free_string) {
-	string str= alloc_string(10);
-	ASSERT_TRUE(str.cap == 10);
-	// TODO: Need to adjust string_view.c and string_view.h to use pointer argument for free_string()
-	free_string(&str);
-	ASSERT_TRUE(str.c_str == NULL);
-	ASSERT_TRUE(str.len == -1);
-	ASSERT_TRUE(str.cap == -1);
-	ASSERT_TRUE(free_string((string*)NULL) == false);
-	str.c_str = NULL;
-	ASSERT_TRUE(free_string(&str) == false);
-}
 
 int main(int argc, const char* const argv[]) {
 	return utest_main(argc, argv);

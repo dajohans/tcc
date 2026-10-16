@@ -20,45 +20,43 @@ string alloc_string(int64_t cap) {
 	return tmp;
 }
 
-string append_string(string str, string end) {
-	if(end.len <= 0) {
-		return str;
-	}
-	if(str.len + end.len > str.cap - 1) {
-		string tmp = alloc_string(str.cap + end.len);
-		if(tmp.cap < 0) {
-			log_error("Failed to append string");
-			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
-		}
-		for(int64_t i = 0; i < str.len; i++) {
-			tmp.c_str[i] = str.c_str[i];
-		}
-		tmp.len = str.len;
-		tmp.c_str[tmp.len] = '\0';
-		free_string(&str);
-		str = tmp;
-	}
-	for(int64_t i = 0; i < end.len; i++) {
-		str.c_str[str.len + i] = end.c_str[i];
-	}
-	str.len = str.len + end.len;
-	str.c_str[str.len] = '\0';
-	return str;
-}
-
-int64_t c_str_len(char* str){
-	if(str == NULL) {
-		return 0;
-	}
-	int64_t i = 0;
-	while(str[i] != '\0') {
-		i++;
-	}
-	return i;
-}
+/* string append_string(string str, string end) { */
+/* 	if(end.len <= 0) { */
+/* 		return str; */
+/* 	} */
+/* 	if(str.len + end.len > str.cap - 1) { */
+/* 		string tmp = alloc_string(str.cap + end.len); */
+/* 		if(tmp.cap < 0) { */
+/* 			log_error("Failed to append string"); */
+/* 			return (string) { .c_str = NULL, .len = -1, .cap = -1 }; */
+/* 		} */
+/* 		for(int64_t i = 0; i < str.len; i++) { */
+/* 			tmp.c_str[i] = str.c_str[i]; */
+/* 		} */
+/* 		tmp.len = str.len; */
+/* 		tmp.c_str[tmp.len] = '\0'; */
+/* 		free_string(&str); */
+/* 		str = tmp; */
+/* 	} */
+/* 	for(int64_t i = 0; i < end.len; i++) { */
+/* 		str.c_str[str.len + i] = end.c_str[i]; */
+/* 	} */
+/* 	str.len = str.len + end.len; */
+/* 	str.c_str[str.len] = '\0'; */
+/* 	return str; */
+/* } */
 
 string concat_string(string str1, string str2) {
-	string tmp = alloc_string(str1.cap + str2.cap - 1);
+	if(str1.cap == -1 && str2.cap == -1) {
+		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	}
+	if(str1.cap == -1) {
+		return str2;
+	}
+	if(str2.cap == -1) {
+		return str1;
+	}
+	string tmp = alloc_string(str1.len + str2.len + 1);
 	if(tmp.cap == -1) {
 		log_error("Failed to concatenate strings");
 		return tmp;
@@ -72,6 +70,31 @@ string concat_string(string str1, string str2) {
 	}
 	tmp.c_str[tmp.len] = '\0';
 	return tmp;
+}
+
+bool c_str_cmp(char* str_1, char* str_2) {
+	if(c_str_len(str_1) != c_str_len(str_2)) {
+		return false;
+	}
+	bool are_equal = true;
+	for(int64_t i = 0; i < c_str_len(str_1); i++) {
+		if(str_1[i] != str_2[i]) {
+			are_equal = false;
+			break;
+		}
+	}
+	return are_equal;
+}
+
+int64_t c_str_len(char* str) {
+	if(str == NULL) {
+		return 0;
+	}
+	int64_t i = 0;
+	while(str[i] != '\0') {
+		i++;
+	}
+	return i;
 }
 
 bool free_string(string* str) {
@@ -91,6 +114,9 @@ bool free_string(string* str) {
 }
 
 string make_string(char* str){
+	if(str == NULL) {
+		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	}
 	string tmp = alloc_string(c_str_len(str) + 1);
 	if(tmp.cap == -1) {
 		log_error("Failed to make string");
@@ -104,26 +130,27 @@ string make_string(char* str){
 	return tmp;
 }
 
-void set_string(string* str, char* new) {
+string set_string(string str, char* new) {
 	if(new == NULL) {
-		return;
+		return str;
 	}
-	if(c_str_len(new) > str->cap - 1){
+	if(c_str_len(new) > str.cap - 1){
 		string tmp = alloc_string(c_str_len(new) + 1);
 		if(tmp.cap == -1) {
 			log_error("Failed to set string content");
-			return;
+			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
 		}
-		free_string(str);
-		str->c_str = tmp.c_str;
-		str->len = tmp.len;
-		str->cap = tmp.cap;
+		free_string(&str);
+		str.c_str = tmp.c_str;
+		str.len = tmp.len;
+		str.cap = tmp.cap;
 	}
-	str->len = c_str_len(new);
-	for(int64_t i = 0; i < str->len; i++) {
-		str->c_str[i] = new[i];
+	str.len = c_str_len(new);
+	for(int64_t i = 0; i < str.len; i++) {
+		str.c_str[i] = new[i];
 	}
-	str->c_str[str->len] = '\0';
+	str.c_str[str.len] = '\0';
+	return str;
 }
 
 string set_string_from_sv(string_view sv) {
@@ -142,6 +169,9 @@ string set_string_from_sv(string_view sv) {
 
 string_view set_sv(string str, int64_t start_offset, int64_t len) {
 	if(str.cap < 0) {
+		return (string_view) { .ptr = NULL, .len = -1 };
+	}
+	if(start_offset + len > str.cap) {
 		return (string_view) { .ptr = NULL, .len = -1 };
 	}
 	return (string_view) { .ptr = str.c_str + start_offset, .len = len };

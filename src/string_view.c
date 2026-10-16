@@ -181,6 +181,9 @@ string_view set_sv_ptr(char* str, int64_t len) {
 	if(str == NULL) {
 		return (string_view) { .ptr = NULL, .len = -1 };
 	}
+	if(c_str_len(str) + 1 < len) {
+		return (string_view) { .ptr = NULL, .len = -1 };
+	}
 	return (string_view) { .ptr = str, .len = len };
 }
 
@@ -297,6 +300,10 @@ string_view sv_split_at_char(string_view *sv, char c) {
 		sv->len--;
 	}
 	result.len = result.len - sv->len;
+	if(sv->len == 0) {
+		sv->ptr = NULL;
+		sv->len = -1;
+	}
 	return result;
 }
 

@@ -134,6 +134,30 @@ UTEST(string, set_string) {
 	free_string(&str_long);
 }
 
+UTEST(string, set_string_from_sv) {
+	string_view sv_null = (string_view) { .ptr = NULL, .len = -1 };
+	// Test early return
+	string result = set_string_from_sv(sv_null);
+	ASSERT_TRUE(result.c_str == NULL);
+	ASSERT_TRUE(result.len == -1);
+	ASSERT_TRUE(result.cap == -1);
+	// Test empty string_view
+	string_view sv_empty = (string_view) { .ptr = NULL, .len = 0 };
+	result = set_string_from_sv(sv_empty);
+	ASSERT_TRUE(result.c_str[0] == '\0');
+	ASSERT_TRUE(result.len == 0);
+	ASSERT_TRUE(result.cap == 1);
+	free_string(&result);
+	// Test non-empty string_view
+	char* str = "test string";
+	string_view sv_short = (string_view) { .ptr = str, .len = c_str_len(str)};
+	result = set_string_from_sv(sv_short);
+	ASSERT_TRUE(c_str_cmp(result.c_str, str));
+	ASSERT_TRUE(result.len == sv_short.len);
+	ASSERT_TRUE(result.cap == sv_short.len + 1);
+	free_string(&result);
+}
+
 UTEST(string, set_sv) {
 	string str_null = (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	string_view result;
@@ -159,28 +183,24 @@ UTEST(string, set_sv) {
 	free_string(&str);
 }
 
-UTEST(string, set_string_from_sv) {
-	string_view sv_null = (string_view) { .ptr = NULL, .len = -1 };
-	// Test early return
-	string result = set_string_from_sv(sv_null);
-	ASSERT_TRUE(result.c_str == NULL);
+UTEST(string, set_sv_ptr) {
+	// Test first early return
+	string_view result = set_sv_ptr(NULL, 0);
+	ASSERT_TRUE(result.ptr == NULL);
 	ASSERT_TRUE(result.len == -1);
-	ASSERT_TRUE(result.cap == -1);
-	// Test empty string_view
-	string_view sv_empty = (string_view) { .ptr = NULL, .len = 0 };
-	result = set_string_from_sv(sv_empty);
-	ASSERT_TRUE(result.c_str[0] == '\0');
-	ASSERT_TRUE(result.len == 0);
-	ASSERT_TRUE(result.cap == 1);
-	free_string(&result);
-	// Test non-empty string_view
-	char* str = "test string";
-	string_view sv_short = (string_view) { .ptr = str, .len = c_str_len(str)};
-	result = set_string_from_sv(sv_short);
-	ASSERT_TRUE(c_str_cmp(result.c_str, str));
-	ASSERT_TRUE(result.len == sv_short.len);
-	ASSERT_TRUE(result.cap == sv_short.len + 1);
-	free_string(&result);
+	// Test trying to set 1 index past terminating null
+	result = set_sv_ptr("123", 5);
+	ASSERT_TRUE(result.ptr == NULL);
+	ASSERT_TRUE(result.len == -1);
+	// Test successful assignment in the middle of string
+	string_view sv = (string_view) { .ptr = "12", .len = 2 };
+	char* str = "12345";
+	result = set_sv_ptr(str, 2);
+	ASSERT_TRUE(sv_cmp(result, sv) == true);
+	// Test successful assignment up to and including terminating null
+	sv = (string_view) { .ptr = str, .len = c_str_len(str) + 1 };
+	result = set_sv_ptr(str, c_str_len(str) + 1);
+	ASSERT_TRUE(sv_cmp(result, sv) == true);
 }
 
 UTEST(string, str_append_sv) {
@@ -234,6 +254,43 @@ UTEST(string, str_append_sv) {
 	free_string(&str_small);
 }
 
+UTEST(string, str_cmp) {
+	string str1 = make_string("test");
+	string str2 = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	ASSERT_TRUE(str_cmp(str1, str2) == false);
+	ASSERT_TRUE(str_cmp(str2, str1) == false);
+	
+	str2 = make_string("nope");
+	ASSERT_TRUE(str_cmp(str1, str2) == false);
+
+	// Test success with same capacity
+	string str3 = make_string("test");
+	ASSERT_TRUE(str_cmp(str1, str3) == true);
+	
+	// Test success with same content but different capacity
+	string str4 = alloc_string(10);
+	str4.c_str[0] = 't';
+	str4.c_str[1] = 'e';
+	str4.c_str[2] = 's';
+	str4.c_str[3] = 't';
+	str4.c_str[4] = '\0';
+	str4.len = c_str_len(str4.c_str);
+	ASSERT_TRUE(str_cmp(str1, str4) == true);
+	
+	// Test failure when only terminating null is different
+	string str5 = make_string("test");
+	string str6 = make_string("test");
+	str6.c_str[str6.len] = 'f';
+	ASSERT_TRUE(str_cmp(str5, str6) == false);
+
+	free_string(&str1);
+	free_string(&str2);
+	free_string(&str3);
+	free_string(&str4);
+	free_string(&str5);
+	free_string(&str6);
+}
+
 UTEST(string, str_realloc) {
 	string str_null = (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	string result;
@@ -283,44 +340,72 @@ UTEST(string, str_realloc) {
 	ASSERT_TRUE(str_long.c_str != str_old.c_str);
 	free_string(&str_long);
 	free_string(&str_same);
-	
 }
 
-UTEST(string, str_cmp) {
-	string str1 = make_string("test");
-	string str2 = (string) { .c_str = NULL, .len = -1, .cap = -1 };
-	ASSERT_TRUE(str_cmp(str1, str2) == false);
-	ASSERT_TRUE(str_cmp(str2, str1) == false);
-	
-	str2 = make_string("nope");
-	ASSERT_TRUE(str_cmp(str1, str2) == false);
+UTEST(string, sv_cmp) {
+	string_view sv_null = (string_view) { .ptr = NULL, .len = -1 };
+	string_view sv_short = (string_view) { .ptr = "test", .len = c_str_len("test") };
+	string_view sv_long = (string_view) { .ptr = "failure", .len = c_str_len("failure") };
+	// Test early return
+	ASSERT_TRUE(sv_cmp(sv_null, sv_short) == false);
+	// Test non-equal strings
+	ASSERT_TRUE(sv_cmp(sv_long, sv_short) == false);
+	// Test equal strings
+	ASSERT_TRUE(sv_cmp(sv_null, sv_null) == true);
+	ASSERT_TRUE(sv_cmp(sv_short, sv_short) == true);
+}
 
-	// Test success with same capacity
-	string str3 = make_string("test");
-	ASSERT_TRUE(str_cmp(str1, str3) == true);
-	
-	// Test success with same content but different capacity
-	string str4 = alloc_string(10);
-	str4.c_str[0] = 't';
-	str4.c_str[1] = 'e';
-	str4.c_str[2] = 's';
-	str4.c_str[3] = 't';
-	str4.c_str[4] = '\0';
-	str4.len = c_str_len(str4.c_str);
-	ASSERT_TRUE(str_cmp(str1, str4) == true);
-	
-	// Test failure when only terminating null is different
-	string str5 = make_string("test");
-	string str6 = make_string("test");
-	str6.c_str[str6.len] = 'f';
-	ASSERT_TRUE(str_cmp(str5, str6) == false);
+UTEST(string, sv_move_forward) {
+	string_view sv_null = (string_view) { .ptr = NULL, .len = -1 };
+	string_view result = sv_move_forward((string_view*)NULL, 0);
+	// Test first early return
+	ASSERT_TRUE(result.len == -1);
+	result = sv_move_forward(&sv_null, 0);
+	ASSERT_TRUE(result.len == -1);
+	// Attempt to move past the end, resulting in moving precisely to the end
+	string_view sv = (string_view) { .ptr = "test", .len = c_str_len("test") };
+	string_view sv_orig = (string_view) { .ptr = sv.ptr, .len = sv.len };
+	result = sv_move_forward(&sv, sv.len + 10);
+	ASSERT_TRUE(sv.ptr == NULL);
+	ASSERT_TRUE(sv.len == -1);
+	ASSERT_TRUE(result.ptr == sv_orig.ptr);
+	ASSERT_TRUE(result.len == sv_orig.len);
+	// Test moving halfway through the string_view
+	sv = (string_view) { .ptr = "test", .len = c_str_len("test") };
+	string_view expected_modification = (string_view) { .ptr = sv.ptr + 2, .len = sv.len - 2 };
+	string_view expected_return = (string_view) { .ptr = sv.ptr,.len = 2 };
+	result = sv_move_forward(&sv, 2);
+	ASSERT_TRUE(sv.ptr == expected_modification.ptr);
+	ASSERT_TRUE(sv.len == expected_modification.len);
+	ASSERT_TRUE(result.ptr == expected_return.ptr);
+	ASSERT_TRUE(result.len == expected_return.len);
+}
 
-	free_string(&str1);
-	free_string(&str2);
-	free_string(&str3);
-	free_string(&str4);
-	free_string(&str5);
-	free_string(&str6);
+UTEST(string, sv_split_at_char) {
+	string_view sv_null = (string_view) { .ptr = NULL, .len = -1 };
+	string_view result = sv_split_at_char((string_view*)NULL, 'a');
+	// Test first early return
+	ASSERT_TRUE(result.len == -1);
+	result = sv_split_at_char(&sv_null, 'a');
+	ASSERT_TRUE(result.len == -1);
+	// Test split in the middle
+	string_view sv = (string_view) { .ptr = "test", .len = c_str_len("test") };
+	string_view sv_orig = (string_view) { .ptr = sv.ptr, .len = sv.len };
+	string_view expected_modification = (string_view) { .ptr = "st", .len = c_str_len("st") };
+	string_view expected_return = (string_view) { .ptr = "te", .len = c_str_len("te") };
+	result = sv_split_at_char(&sv, 's');
+	ASSERT_TRUE(result.ptr == sv_orig.ptr);
+	ASSERT_TRUE(sv_cmp(result, expected_return));
+	ASSERT_TRUE(sv.ptr == sv_orig.ptr + 2);
+	ASSERT_TRUE(sv_cmp(sv, expected_modification));
+	// Test split at nonexistent character
+	sv = (string_view) { .ptr = "test", .len = c_str_len("test") };
+	sv_orig = (string_view) { .ptr = sv.ptr, .len = sv.len };
+	result = sv_split_at_char(&sv, 'a');
+	ASSERT_TRUE(result.ptr == sv_orig.ptr);
+	ASSERT_TRUE(sv_cmp(result, sv_orig) == true);
+	ASSERT_TRUE(sv.ptr == NULL);
+	ASSERT_TRUE(sv.len == -1);
 }
 
 /* UTEST(string, append_string) { */

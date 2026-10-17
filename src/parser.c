@@ -46,6 +46,44 @@
   * and it makes parser generation a little bit like when using YACC
   * or Bison but without actually using YACC or Bison.
   */
+/* void grammar_end(token_ptr, int64_t) { */
+/* } */
+/* void grammar_repeat(token_ptr, int64_t) { */
+/* } */
+/* ast* (*fun_ptr[][7]) (token_ptr, int64_t) = { */
+/* 	{ parse_keyword_int, parse_keyword_float, parse_from_type_table, grammar_end, grammar_end, grammar_end, grammar_end }, */
+/* 	{ parse_type, parse_identifier, parse_open_paren, parse_close_paren, grammar_end, grammar_end, grammar_end }, */
+/* 	{ parse_expression, parse_arithmetic_op, parse_expression, grammar_end, grammar_end, grammar_end, grammar_end }, */
+/* 	{ parse_keyword_return, parse_expression, parse_semicolon, grammar_end, grammar_end, grammar_end, grammar_end }, */
+/* 	{ parse_if_statement, parse_open_paren, parse_expression, parse_close_paren, parse_open_curly, parse_statement_list, parse_close_curly}, */
+/* 	{ parse_statement, grammar_repeat, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end }, // Repeat the thing before parse_statement */
+/* }; */
+
+/* a grammar rule with several alternatives such as
+ * 'type -> keyword_int OR keyword_float'
+ * is represented by two arrays; one array for each alternative. So we
+ * would have one array for 'type -> keyword_int' and one for
+ * 'type -> keyword_float'.
+ *
+ * A grammar rule with arbitrary amount of repetition such as 
+ * 'statement_list -> statement*'
+ * is represented by a grammar rule which ends with the function
+ * grammar_repeat.
+ */
+
+/* syntax_kind grammar_rule[] = { */
+/* 	TYPE, */
+/* 	FUNCTION_PROTOTYPE, */
+/* 	EXPRESSION, */
+/* 	STATEMENT, */
+/* 	STATEMENT, */
+/* 	STATEMENT_LIST */
+/* }; */
+
+#define RULE_LEN 10
+int64_t grammar_rules [][RULE_LEN] = {
+
+};
 
 void free_ast_helper(ast* syntax_tree) {
 	if(syntax_tree == NULL) {
@@ -133,11 +171,14 @@ ast* parse_function_definition(token_ptr tokens, int64_t index) {
 	}
 	if(tokens.ptr[index + function_prototype_node->children_count].token_kind != CURLY_OPEN ||
 	tokens.ptr[index + function_prototype_node->children_count + 1 + statement_node->children_count].token_kind != CURLY_CLOSE) {
+		free_ast(function_prototype_node);
+		free_ast(statement_node);
 		return NULL;
 	}
 	ast* curly_open_node = init_ast_token_node(tokens.ptr[index + function_prototype_node->children_count]);
 	if(curly_open_node == NULL) {
 		free_ast(function_prototype_node);
+		free_ast(statement_node);
 		return NULL;
 	}
 	ast* curly_close_node = init_ast_token_node(tokens.ptr[index + function_prototype_node->children_count + 1 + statement_node->children_count]);
@@ -177,67 +218,156 @@ ast* parse_function_definition(token_ptr tokens, int64_t index) {
 	return function_definition_node;
 }
 
-ast* parse_function_prototype(token_ptr tokens, int64_t index) {
-	const int64_t rule_len = 4;
-	if(index + rule_len >= tokens.len){
+ast* parse_identifier(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
 		return NULL;
 	}
-	ast* return_type_node = parse_type(tokens, index);
-	if(return_type_node == NULL) {
+	if(tokens.ptr[index].token_kind != IDENTIFIER) {
 		return NULL;
 	}
-	if(tokens.ptr[index + return_type_node->children_count].token_kind != IDENTIFIER ||
-	tokens.ptr[index + return_type_node->children_count + 1].token_kind != PAREN_OPEN ||
-	tokens.ptr[index + return_type_node->children_count + 2].token_kind != PAREN_CLOSE) {
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
 		return NULL;
 	}
-	ast* name_node = init_ast_token_node(tokens.ptr[index + return_type_node->children_count]);
-	if(name_node == NULL) {
-		free_ast(return_type_node);
+	return node;
+}
+
+ast* parse_close_paren(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
 		return NULL;
 	}
-	ast* paren_open_node = init_ast_token_node(tokens.ptr[index + return_type_node->children_count + 1]);
-	if(paren_open_node == NULL) {
-		free_ast(return_type_node);
-		free_ast(name_node);
+	if(tokens.ptr[index].token_kind != PAREN_CLOSE) {
 		return NULL;
 	}
-	ast* paren_close_node = init_ast_token_node(tokens.ptr[index + return_type_node->children_count + 2]);
-	if(paren_close_node == NULL) {
-		free_ast(return_type_node);
-		free_ast(name_node);
-		free_ast(paren_open_node);
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
 		return NULL;
 	}
-	
-	ast* function_prototype_node = init_ast_syntax_node(
-		FUNCTION_PROTOTYPE,
-		return_type_node->node.syntax.first_char_index,
-		paren_close_node->node.lex_token.last_char_index
+	return node;
+}
+
+ast* parse_open_paren(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
+		return NULL;
+	}
+	if(tokens.ptr[index].token_kind != PAREN_OPEN) {
+		return NULL;
+	}
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
+		return NULL;
+	}
+	return node;
+}
+
+ast* set_syntax_node(ast** nodes, int64_t num_nodes, syntax_kind kind) {
+	ast* syntax_node = init_ast_syntax_node(
+		kind,
+		nodes[0]->node.syntax.first_char_index,
+		nodes[num_nodes - 1]->node.lex_token.last_char_index
 	);
-	if(function_prototype_node == NULL) {
-		free_ast(return_type_node);
-		free_ast(name_node);
-		free_ast(paren_open_node);
-		free_ast(paren_close_node);
+	if(syntax_node == NULL) {
+		for(int64_t i = 0; i < num_nodes; i++) {
+			free_ast(nodes[i]);
+		}
 		return NULL;
 	}
-	function_prototype_node->children = malloc(rule_len * sizeof(*function_prototype_node->children));
-	if(function_prototype_node->children == NULL) {
-		free_ast(return_type_node);
-		free_ast(name_node);
-		free_ast(paren_open_node);
-		free_ast(paren_close_node);
-		free_ast(function_prototype_node);
+	syntax_node->children = malloc(num_nodes * sizeof(*syntax_node->children));
+	if(syntax_node->children == NULL) {
+		for(int64_t i = 0; i < num_nodes; i++) {
+			free_ast(nodes[i]);
+		}
+		free_ast(syntax_node);
 		log_error("Failed to allocate memory for abstract syntax tree");
 		return NULL;
 	}
-	function_prototype_node->children_count = rule_len;
-	function_prototype_node->children[0] = return_type_node;
-	function_prototype_node->children[1] = name_node;
-	function_prototype_node->children[2] = paren_open_node;
-	function_prototype_node->children[3] = paren_close_node;
+	syntax_node->children_count = num_nodes;
+	for(int64_t i = 0; i < num_nodes; i++) {
+		syntax_node->children[i] = nodes[i];
+	}
+	return syntax_node;
+	
+}
+
+ast* parse_function_prototype(token_ptr tokens, int64_t index) {
+	const int64_t rule_len = 4;
+	if(index + rule_len >= tokens.len) {
+		return NULL;
+	}
+	
+	ast *nodes[rule_len];
+	ast* (*parse_fun_ptr[]) (token_ptr, int64_t) = {
+		parse_type,
+		parse_identifier,
+		parse_open_paren,
+		parse_close_paren
+	};
+	
+	for(int64_t i = 0; i < ARR_LEN(nodes); i++) {
+		nodes[i] = parse_fun_ptr[i](tokens, index);
+		if(nodes[i] == NULL) {
+			for(int64_t l = 0; l < i; l++) {
+				free_ast(nodes[i]);
+			}
+			return NULL;
+		}
+		if(nodes[i]->kind == NON_TERMINAL) {
+			// TODO: This needs to be the number of tokens in the ast
+			// nodes[i]. Even a type node can consist of two tokens,
+			// e.g. for a 'struct node'.
+			index += nodes[i]->children_count;
+		} else {
+			index += 1;
+		}
+	}
+	
+	ast* function_prototype_node = set_syntax_node(nodes, ARR_LEN(nodes), FUNCTION_PROTOTYPE);
+	if(function_prototype_node == NULL) {
+		return NULL;
+	}
 	return function_prototype_node;
+}
+
+ast* parse_keyword_return(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
+		return NULL;
+	}
+	if(tokens.ptr[index].token_kind != KEYWORD_RETURN) {
+		return NULL;
+	}
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
+		return NULL;
+	}
+	return node;
+}
+
+ast* parse_number(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
+		return NULL;
+	}
+	if(tokens.ptr[index].token_kind != NUMBER) {
+		return NULL;
+	}
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
+		return NULL;
+	}
+	return node;
+}
+
+ast* parse_semicolon(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
+		return NULL;
+	}
+	if(tokens.ptr[index].token_kind != SEMICOLON) {
+		return NULL;
+	}
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
+		return NULL;
+	}
+	return node;
 }
 
 ast* parse_statement(token_ptr tokens, int64_t index) {
@@ -245,52 +375,90 @@ ast* parse_statement(token_ptr tokens, int64_t index) {
 	if(index + rule_len >= tokens.len) {
 		return NULL;
 	}
-	if(tokens.ptr[index].token_kind != KEYWORD_RETURN ||
-	tokens.ptr[index + 1].token_kind != NUMBER ||
-	tokens.ptr[index + 2].token_kind != SEMICOLON) {
-		return NULL;
+	
+	ast *nodes[rule_len];
+	ast* (*parse_fun_ptr[]) (token_ptr, int64_t) = {
+		parse_keyword_return,
+		parse_number,
+		parse_semicolon
+	};
+	
+	for(int64_t i = 0; i < ARR_LEN(nodes); i++) {
+		nodes[i] = parse_fun_ptr[i](tokens, index);
+		if(nodes[i] == NULL) {
+			for(int64_t l = 0; l < i; l++) {
+				free_ast(nodes[i]);
+			}
+			return NULL;
+		}
+		if(nodes[i]->kind == NON_TERMINAL) {
+			// TODO: This needs to be the number of tokens in the ast
+			// nodes[i]. Even a type node can consist of two tokens,
+			// e.g. for a 'struct node'.
+			index += nodes[i]->children_count;
+		} else {
+			index += 1;
+		}
 	}
-	ast* keyword_return_node = init_ast_token_node(tokens.ptr[index]);
-	if(keyword_return_node == NULL) {
-		return NULL;
-	}
-	ast* number_node = init_ast_token_node(tokens.ptr[index + 1]);
-	if(number_node == NULL) {
-		free_ast(keyword_return_node);
-		return NULL;
-	}
-	ast* semicolon_node = init_ast_token_node(tokens.ptr[index + 2]);
-	if(semicolon_node == NULL) {
-		free_ast(keyword_return_node);
-		free_ast(number_node);
-		return NULL;
-	}
-	ast* statement_node = init_ast_syntax_node(
-		STATEMENT,
-		tokens.ptr[index].first_char_index,
-		tokens.ptr[index + 2].last_char_index
-	);
+	
+	ast* statement_node = set_syntax_node(nodes, ARR_LEN(nodes), STATEMENT);
 	if(statement_node == NULL) {
-		free_ast(keyword_return_node);
-		free_ast(number_node);
-		free_ast(semicolon_node);
 		return NULL;
 	}
-	statement_node->children = malloc(rule_len * sizeof(*statement_node->children));
-	if(statement_node->children == NULL) {
-		free_ast(keyword_return_node);
-		free_ast(number_node);
-		free_ast(semicolon_node);
-		free_ast(statement_node);
-		log_error("Failed to allocate memory for abstract syntax tree");
-		return NULL;
-	}
-	statement_node->children_count = rule_len;
-	statement_node->children[0] = keyword_return_node;
-	statement_node->children[1] = number_node;
-	statement_node->children[2] = semicolon_node;
 	return statement_node;
 }
+
+/* ast* parse_statement(token_ptr tokens, int64_t index) { */
+/* 	const int64_t rule_len = 3; */
+/* 	if(index + rule_len >= tokens.len) { */
+/* 		return NULL; */
+/* 	} */
+/* 	if(tokens.ptr[index].token_kind != KEYWORD_RETURN || */
+/* 	tokens.ptr[index + 1].token_kind != NUMBER || */
+/* 	tokens.ptr[index + 2].token_kind != SEMICOLON) { */
+/* 		return NULL; */
+/* 	} */
+/* 	ast* keyword_return_node = init_ast_token_node(tokens.ptr[index]); */
+/* 	if(keyword_return_node == NULL) { */
+/* 		return NULL; */
+/* 	} */
+/* 	ast* number_node = init_ast_token_node(tokens.ptr[index + 1]); */
+/* 	if(number_node == NULL) { */
+/* 		free_ast(keyword_return_node); */
+/* 		return NULL; */
+/* 	} */
+/* 	ast* semicolon_node = init_ast_token_node(tokens.ptr[index + 2]); */
+/* 	if(semicolon_node == NULL) { */
+/* 		free_ast(keyword_return_node); */
+/* 		free_ast(number_node); */
+/* 		return NULL; */
+/* 	} */
+/* 	ast* statement_node = init_ast_syntax_node( */
+/* 		STATEMENT, */
+/* 		tokens.ptr[index].first_char_index, */
+/* 		tokens.ptr[index + 2].last_char_index */
+/* 	); */
+/* 	if(statement_node == NULL) { */
+/* 		free_ast(keyword_return_node); */
+/* 		free_ast(number_node); */
+/* 		free_ast(semicolon_node); */
+/* 		return NULL; */
+/* 	} */
+/* 	statement_node->children = malloc(rule_len * sizeof(*statement_node->children)); */
+/* 	if(statement_node->children == NULL) { */
+/* 		free_ast(keyword_return_node); */
+/* 		free_ast(number_node); */
+/* 		free_ast(semicolon_node); */
+/* 		free_ast(statement_node); */
+/* 		log_error("Failed to allocate memory for abstract syntax tree"); */
+/* 		return NULL; */
+/* 	} */
+/* 	statement_node->children_count = rule_len; */
+/* 	statement_node->children[0] = keyword_return_node; */
+/* 	statement_node->children[1] = number_node; */
+/* 	statement_node->children[2] = semicolon_node; */
+/* 	return statement_node; */
+/* } */
 
 ast* parse_type(token_ptr tokens, int64_t index) {
 	if(index >= tokens.len) {

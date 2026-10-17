@@ -29,10 +29,15 @@ Linking as well as compilation of assembly to binary are out of scope.
 
 ## Current goal
 
-- [ ] Add unit testing and integration testing
+- [ ] Improve the parser and lexer designs
+    - [ ] Specify grammar rules as static data, rather than each grammar rule being implemented as a separate C function
+    - [ ] Add functions for traversing, accessing data from, and modifying the token list and AST
+    - [ ] Rethink the type situation. Types can be defined at arbitrary points in the source code, so the type cannot strictly speaking be determined by a static context free grammar. Types need to be checked against a dynamic type table.    
+    - [ ] Think about the keywork situation. Should each keyword be its own token or should there only be one keyword token? 
 
 ## Completed goals
 
+- [x] Add initial unit testing on string.c
 - [x] Adapt the minimal viable product implementation to not be hard coded for the example C program.
     - [x] Enable substring handling by something like C++'s string_view
     - [x] Make the lexical tokens and abstract syntax tree nodes contain their corresponding lexemes as a string_view

@@ -28,9 +28,9 @@ typedef struct string_view {
 
 string alloc_string(int64_t cap);
 string append_string(string str, string end);
-string concat_string(string str1, string str2);
 bool c_str_cmp(char* str_1, char* str_2);
 int64_t c_str_len(char* str);
+string concat_string(string str1, string str2);
 bool free_string(string* str);
 string make_string(char* str);
 string set_string(string str, char* new);

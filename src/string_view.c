@@ -20,31 +20,30 @@ string alloc_string(int64_t cap) {
 	return tmp;
 }
 
-/* string append_string(string str, string end) { */
-/* 	if(end.len <= 0) { */
-/* 		return str; */
-/* 	} */
-/* 	if(str.len + end.len > str.cap - 1) { */
-/* 		string tmp = alloc_string(str.cap + end.len); */
-/* 		if(tmp.cap < 0) { */
-/* 			log_error("Failed to append string"); */
-/* 			return (string) { .c_str = NULL, .len = -1, .cap = -1 }; */
-/* 		} */
-/* 		for(int64_t i = 0; i < str.len; i++) { */
-/* 			tmp.c_str[i] = str.c_str[i]; */
-/* 		} */
-/* 		tmp.len = str.len; */
-/* 		tmp.c_str[tmp.len] = '\0'; */
-/* 		free_string(&str); */
-/* 		str = tmp; */
-/* 	} */
-/* 	for(int64_t i = 0; i < end.len; i++) { */
-/* 		str.c_str[str.len + i] = end.c_str[i]; */
-/* 	} */
-/* 	str.len = str.len + end.len; */
-/* 	str.c_str[str.len] = '\0'; */
-/* 	return str; */
-/* } */
+bool c_str_cmp(char* str_1, char* str_2) {
+	if(c_str_len(str_1) != c_str_len(str_2)) {
+		return false;
+	}
+	bool are_equal = true;
+	for(int64_t i = 0; i < c_str_len(str_1); i++) {
+		if(str_1[i] != str_2[i]) {
+			are_equal = false;
+			break;
+		}
+	}
+	return are_equal;
+}
+
+int64_t c_str_len(char* str) {
+	if(str == NULL) {
+		return 0;
+	}
+	int64_t i = 0;
+	while(str[i] != '\0') {
+		i++;
+	}
+	return i;
+}
 
 string concat_string(string str1, string str2) {
 	if(str1.cap == -1 && str2.cap == -1) {
@@ -70,31 +69,6 @@ string concat_string(string str1, string str2) {
 	}
 	tmp.c_str[tmp.len] = '\0';
 	return tmp;
-}
-
-bool c_str_cmp(char* str_1, char* str_2) {
-	if(c_str_len(str_1) != c_str_len(str_2)) {
-		return false;
-	}
-	bool are_equal = true;
-	for(int64_t i = 0; i < c_str_len(str_1); i++) {
-		if(str_1[i] != str_2[i]) {
-			are_equal = false;
-			break;
-		}
-	}
-	return are_equal;
-}
-
-int64_t c_str_len(char* str) {
-	if(str == NULL) {
-		return 0;
-	}
-	int64_t i = 0;
-	while(str[i] != '\0') {
-		i++;
-	}
-	return i;
 }
 
 bool free_string(string* str) {
@@ -343,6 +317,9 @@ string_view sv_trim_right(string_view* sv) {
 }
 
 string stringify_c_str(char *str) {
+	if(str == NULL) {
+		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	}
 	string tmp;
 	tmp.c_str = str;
 	tmp.len = c_str_len(str);

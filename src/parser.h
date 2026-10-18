@@ -7,7 +7,7 @@
 typedef enum {
 	AST_ERROR = -2,
 	TYPE = 100,
-	STATEMENT,
+	RETURN_STATEMENT,
 	STATEMENT_LIST,
 	FUNCTION_PROTOTYPE,
 	FUNCTION_DEFINITION
@@ -23,6 +23,8 @@ typedef struct {
 	int64_t first_char_index;
 	int64_t last_char_index;
 	
+	struct abstract_syntax_tree** children;
+	int64_t children_count;
 } syntax_construct;
 
 typedef struct abstract_syntax_tree {
@@ -31,19 +33,26 @@ typedef struct abstract_syntax_tree {
 		token lex_token;
 		syntax_construct syntax;
 	} node;
-	struct abstract_syntax_tree** children;
-	int64_t children_count;
 } ast;
 
+ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t));
+ast* parse_top_level(token_ptr tokens, int64_t index);
+void free_ast_helper(ast* syntax_tree);
 void free_ast(ast* syntax_tree);
-char* grammer_token_to_c_str(int32_t token);
-ast* parse_function_definition(token_ptr tokens, int64_t index);
+char* grammar_token_to_c_str(int32_t token);
+ast* init_ast_token_node(token lexical_token);
 ast* parse_identifier(token_ptr tokens, int64_t index);
+ast* parse_close_curly(token_ptr tokens, int64_t index);
+ast* parse_open_curly(token_ptr tokens, int64_t index);
 ast* parse_close_paren(token_ptr tokens, int64_t index);
 ast* parse_open_paren(token_ptr tokens, int64_t index);
-ast* parse_function_prototype(token_ptr tokens, int64_t index);
-ast* parse_statement(token_ptr tokens, int64_t index);
+ast* set_syntax_node(ast** nodes, int64_t num_nodes, syntax_kind kind);
+ast* parse_keyword_type(token_ptr tokens, int64_t index);
+ast* parse_keyword_return(token_ptr tokens, int64_t index);
+ast* parse_number(token_ptr tokens, int64_t index);
+ast* parse_semicolon(token_ptr tokens, int64_t index);
 ast* parse_type(token_ptr tokens, int64_t index);
+void print_ast_helper(ast* syntax_tree, int64_t padding_count);
 void print_ast(ast* syntax_tree);
 
 #endif // PARSER_H

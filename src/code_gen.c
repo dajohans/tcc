@@ -30,11 +30,11 @@ string* ast_to_assembly(ast* syntax_tree) {
 	// it's hard coded to be the minimal main program. But this
 	// demonstrates the basic idea. It remains to change the
 	// implementation to properly max the abstract syntax tree.
-	ast* statement_node = syntax_tree->children[2];
+	ast* statement_node = syntax_tree->node.syntax.children[2];
 	if(syntax_tree->kind == NON_TERMINAL && syntax_tree->node.syntax.construct == FUNCTION_DEFINITION) {
 		main_handling1 = str_append_sv(
 			make_string("call "),
-			syntax_tree->children[0]->children[1]->node.lex_token.lexeme
+			syntax_tree->node.syntax.children[0]->node.syntax.children[1]->node.lex_token.lexeme
 		);
 		// TODO: Add functions to easily pick out certain language
 		// constructs from the syntax tree. For example, if I know
@@ -50,17 +50,17 @@ string* ast_to_assembly(ast* syntax_tree) {
 		if(main_handling1.cap < 0) {
 			return NULL;
 		}
-		impl_handling1 = str_append_c_str(set_string_from_sv(syntax_tree->children[0]->children[1]->node.lex_token.lexeme), ":\n");
+		impl_handling1 = str_append_c_str(set_string_from_sv(syntax_tree->node.syntax.children[0]->node.syntax.children[1]->node.lex_token.lexeme), ":\n");
 		if(impl_handling1.cap < 0) {
 			free_string(&main_handling1);
 			return NULL;
 		}
-		if(statement_node->kind == NON_TERMINAL && statement_node->node.syntax.construct == STATEMENT) {
+		if(statement_node->kind == NON_TERMINAL && statement_node->node.syntax.construct == RETURN_STATEMENT) {
 		// TODO: Now we assume that this is a return statement. That
 		// needs to change
 			impl_handling2 = str_append_sv(
 				make_string("mov rax, "),
-				syntax_tree->children[2]->children[1]->node.lex_token.lexeme
+				syntax_tree->node.syntax.children[2]->node.syntax.children[1]->node.lex_token.lexeme
 			);
 			impl_handling2 = str_append_c_str(
 				impl_handling2,

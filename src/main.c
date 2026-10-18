@@ -104,13 +104,15 @@ int main() {
 	/* ast* syntax_tree = parse_type(token_array, 0); */
 	/* ast* syntax_tree = parse_function_prototype(token_array, 0); */
 	/* ast* syntax_tree = parse_statement(token_array, 5); */
-	ast* syntax_tree = parse_function_definition(token_array, 0);
+	ast* syntax_tree = parse_top_level(token_array, 0);
+	
+	/* ast* syntax_tree = parse_function_definition(token_array, 0); */
 	print_ast(syntax_tree);
 
-	if(!return_type_check(syntax_tree)) {
-		log_error("Type mismatch - Return value type and function return type differ");
-	}
-	code_gen(syntax_tree);
+	/* if(!return_type_check(syntax_tree)) { */
+	/* 	log_error("Type mismatch - Return value type and function return type differ"); */
+	/* } */
+	/* code_gen(syntax_tree); */
 	
 	free_ast(syntax_tree);
 	free(token_array.ptr);

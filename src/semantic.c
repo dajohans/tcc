@@ -36,21 +36,21 @@ bool return_type_check(ast* syntax_tree) {
 	};
 	type_info function_return_type;
 	for(int64_t i = 0; i < ARR_LEN(type_table); i++) {
-		if(syntax_tree->children[0]->children[0]->children[0]->node.lex_token.token_kind == type_table[i].id) {
+		if(syntax_tree->node.syntax.children[0]->node.syntax.children[0]->node.syntax.children[0]->node.lex_token.token_kind == type_table[i].id) {
 			function_return_type = type_table[i];
 		}
 	}
 	type_info return_value_type;
-	for(int64_t i = 0; i < syntax_tree->children_count; i++){
-		if(syntax_tree->children[i]->kind == TERMINAL) {
+	for(int64_t i = 0; i < syntax_tree->node.syntax.children_count; i++){
+		if(syntax_tree->node.syntax.children[i]->kind == TERMINAL) {
 			continue;
 		}
-		if(syntax_tree->children[i]->node.syntax.construct != STATEMENT) {
+		if(syntax_tree->node.syntax.children[i]->node.syntax.construct != RETURN_STATEMENT) {
 			continue;
 		}
-		for(int64_t l = 0; l < syntax_tree->children[i]->children_count; l++) {
-			if(syntax_tree->children[i]->children[l]->node.lex_token.token_kind == KEYWORD_RETURN) {
-				if(syntax_tree->children[i]->children[l + 1]->node.lex_token.token_kind == NUMBER) {
+		for(int64_t l = 0; l < syntax_tree->node.syntax.children[i]->node.syntax.children_count; l++) {
+			if(syntax_tree->node.syntax.children[i]->node.syntax.children[l]->node.lex_token.token_kind == KEYWORD_RETURN) {
+				if(syntax_tree->node.syntax.children[i]->node.syntax.children[l + 1]->node.lex_token.token_kind == NUMBER) {
 					// TODO: This should probably be looked up in a
 					// symbol table with type info or something
 					return_value_type = type_table[0];

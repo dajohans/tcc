@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "error.h"
 #include "lexer.h"
 #include "parser.h"
 #include "string_view.h"
@@ -9,16 +10,12 @@ typedef struct type_info {
 	string_view name;
 } type_info;
 
-bool return_type_check(ast* syntax_tree) {
-	if(syntax_tree->kind != NON_TERMINAL) {
+bool return_type_check(ast* fun) {
+	ast* return_type_node = function_return_type(fun);
+	ast* return_expression_node = return_statement_expression(function_return_statement(fun));
+	if(return_type_node == NULL || return_expression_node == NULL) {
 		return false;
 	}
-	if(syntax_tree->node.syntax.construct != FUNCTION_DEFINITION) {
-		return false;
-	}
-	// TODO: This table should be initialized elsewhere. Perhaps make
-	// sure the table has a value to signal that there's an error,
-	// probably with .id = -1
 	string int_str = make_string("int");
 	if(int_str.cap < 0) {
 		return false;
@@ -34,39 +31,41 @@ bool return_type_check(ast* syntax_tree) {
 		(type_info) { .id = KEYWORD_INT, .name = int_sv },
 		(type_info) { .id = KEYWORD_FLOAT, .name = float_sv }
 	};
-	type_info function_return_type;
+	type_info function_return_type = (type_info) {
+		.id = -1,
+		.name = { .ptr = NULL, .len = -1 }
+	};
 	for(int64_t i = 0; i < ARR_LEN(type_table); i++) {
-		if(syntax_tree->node.syntax.children[0]->node.syntax.children[0]->node.syntax.children[0]->node.lex_token.token_kind == type_table[i].id) {
+		if(get_child(return_type_node, 0)->node.lex_token.token_kind == type_table[i].id) {
 			function_return_type = type_table[i];
 		}
 	}
-	type_info return_value_type;
-	for(int64_t i = 0; i < syntax_tree->node.syntax.children_count; i++){
-		if(syntax_tree->node.syntax.children[i]->kind == TERMINAL) {
-			continue;
-		}
-		if(syntax_tree->node.syntax.children[i]->node.syntax.construct != RETURN_STATEMENT) {
-			continue;
-		}
-		for(int64_t l = 0; l < syntax_tree->node.syntax.children[i]->node.syntax.children_count; l++) {
-			if(syntax_tree->node.syntax.children[i]->node.syntax.children[l]->node.lex_token.token_kind == KEYWORD_RETURN) {
-				if(syntax_tree->node.syntax.children[i]->node.syntax.children[l + 1]->node.lex_token.token_kind == NUMBER) {
-					// TODO: This should probably be looked up in a
-					// symbol table with type info or something
-					return_value_type = type_table[0];
-					// TODO: Keep an array of types for all return
-					// statements found. Of course there can be more
-					// than one...
-					break;
-				}
-			}
-		}
-		
+	if(function_return_type.id == -1) {
+		free_string(&int_str);
+		free_string(&float_str);
+		log_error("Failed return value check - invalid return type in function prototype");
+		return false;
+	}
+	type_info return_value_type = (type_info) {
+		.id = -1,
+		.name = { .ptr = NULL, .len = -1 }
+	};
+	// TODO: This is still hard coded for 'return 0;'
+	if(return_expression_node->node.lex_token.token_kind == NUMBER) {
+		return_value_type = type_table[0];
+	}
+	if(return_value_type.id == -1) {
+		free_string(&int_str);
+		free_string(&float_str);
+		log_error("Failed return value check - invalid type of returned expression");
+		return false;
+	}
+	if(return_value_type.id != function_return_type.id) {
+		free_string(&int_str);
+		free_string(&float_str);
+		return false;
 	}
 	free_string(&int_str);
 	free_string(&float_str);
-	if(function_return_type.id != return_value_type.id) {
-		return false;
-	}
 	return true;
 }

@@ -665,11 +665,12 @@ ast* function_return_statement(ast* fun) {
 	if(!is_function_definition(fun)) {
 		return NULL;
 	}
+	ast* statement_list = function_statement_list(fun);
 	ast* return_statement = NULL;
-	for(int64_t i = 0; get_child(fun, i) != NULL; i++) {
-		if(is_return_statement(get_child(fun, i))) {
+	for(int64_t i = 0; get_child(statement_list, i) != NULL; i++) {
+		if(is_return_statement(get_child(statement_list, i))) {
 			// TODO: There can be several returns. Keep a list of them
-			return_statement = get_child(fun, i);
+			return_statement = get_child(statement_list, i);
 		}
 	}
 	return return_statement;

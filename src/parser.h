@@ -8,7 +8,8 @@ typedef enum {
 	AST_ERROR = -2,
 	TYPE = 100,
 	RETURN_STATEMENT,
-	STATEMENT_LIST,
+	LOCAL_SCOPE,
+	GLOBAL_SCOPE,
 	FUNCTION_PROTOTYPE,
 	FUNCTION_DEFINITION
 } syntax_kind;
@@ -53,13 +54,14 @@ ast* parse_number(token_ptr tokens, int64_t index);
 ast* parse_semicolon(token_ptr tokens, int64_t index);
 ast* parse_type(token_ptr tokens, int64_t index);
 ast* get_child(ast* node, int64_t index);
+bool is_global_scope(ast* node);
 bool is_function_definition(ast* node);
 bool is_function_prototype(ast* node);
 bool is_type(ast* node);
-bool is_statement_list(ast* node);
+bool is_local_scope(ast* node);
 bool is_return_statement(ast* node);
 ast* function_return_type(ast* fun);
-ast* function_statement_list(ast* fun);
+ast* function_local_scope(ast* fun);
 ast* function_return_statement(ast* fun);
 ast* function_prototype_name(ast* fun);
 ast* function_name(ast* fun);

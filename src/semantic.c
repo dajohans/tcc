@@ -2,13 +2,26 @@
 
 #include "error.h"
 #include "lexer.h"
-#include "parser.h"
+#include "semantic.h"
 #include "string_view.h"
 
 typedef struct type_info {
 	int64_t id;
 	string_view name;
 } type_info;
+
+bool analyze_semantics(ast* syntax_tree) {
+	if(!is_global_scope(syntax_tree)) {
+		return false;
+	}
+	bool result = true;
+	for(int64_t i = 0; get_child(syntax_tree, i) != NULL; i++) {
+		if(is_function_definition(get_child(syntax_tree, i))) {
+			result = return_type_check(get_child(syntax_tree, i));
+		}
+	}
+	return result;
+}
 
 bool return_type_check(ast* fun) {
 	ast* return_type_node = function_return_type(fun);

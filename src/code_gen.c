@@ -26,13 +26,14 @@ string* ast_to_assembly(ast* syntax_tree) {
 	if(syntax_tree == NULL) {
 		return NULL;
 	}
-	if(!is_function_definition(syntax_tree)) {
+	if(!is_global_scope(syntax_tree)) {
 		return NULL;
 	}
+	ast* fun = get_child(syntax_tree, 0);
 	
 	main_handling1 = str_append_sv(
 		make_string("call "),
-		function_name(syntax_tree)->node.lex_token.lexeme
+		function_name(fun)->node.lex_token.lexeme
 	);
 	main_handling1 = str_append_c_str(
 		main_handling1,
@@ -42,7 +43,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 	if(main_handling1.cap < 0) {
 		return NULL;
 	}
-	impl_handling1 = str_append_c_str(set_string_from_sv(function_name(syntax_tree)->node.lex_token.lexeme), ":\n");
+	impl_handling1 = str_append_c_str(set_string_from_sv(function_name(fun)->node.lex_token.lexeme), ":\n");
 	if(impl_handling1.cap < 0) {
 		free_string(&main_handling1);
 		return NULL;
@@ -51,7 +52,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 	// needs to change
 	impl_handling2 = str_append_sv(
 		make_string("mov rax, "),
-		return_statement_expression(function_return_statement(syntax_tree))->node.lex_token.lexeme
+		return_statement_expression(function_return_statement(fun))->node.lex_token.lexeme
 	);
 	impl_handling2 = str_append_c_str(
 		impl_handling2,

@@ -28,7 +28,8 @@ ast* grammar_end(token_ptr, int64_t) { return NULL; }
 ast* parse_return_statement(token_ptr, int64_t) { return NULL; }
 ast* parse_function_prototype(token_ptr, int64_t) { return NULL; }
 ast* parse_function_definition(token_ptr, int64_t) { return NULL; }
-ast* parse_statement_list(token_ptr, int64_t) { return NULL; }
+ast* parse_local_scope(token_ptr, int64_t) { return NULL; }
+ast* parse_global_scope(token_ptr, int64_t) { return NULL; }
 
 
 /* a grammar rule with several alternatives such as
@@ -38,26 +39,28 @@ ast* parse_statement_list(token_ptr, int64_t) { return NULL; }
  * 'type -> keyword_float'.
  *
  * A grammar rule with arbitrary amount of repetition such as 
- * 'statement_list -> statement*'
+ * 'local_scope -> statement*'
  * is represented by a grammar rule which ends with the function
  * grammar_repeat.
  */
 
 #define RULE_LEN 10
 ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
-	{ parse_type,                parse_keyword_type,                                                                  grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
-	{ parse_return_statement,    parse_keyword_return, parse_number, parse_semicolon,                                 grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
-	{ parse_function_prototype,  parse_type, parse_identifier, parse_open_paren, parse_close_paren,                   grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
-	{ parse_function_definition, parse_function_prototype, parse_open_curly, parse_statement_list, parse_close_curly, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
-	{ parse_statement_list,      parse_return_statement,                                                              grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  }
+	{ parse_global_scope,        parse_function_definition,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_type,                parse_keyword_type,                                                               grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_return_statement,    parse_keyword_return, parse_number, parse_semicolon,                              grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_function_prototype,  parse_type, parse_identifier, parse_open_paren, parse_close_paren,                grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
+	{ parse_function_definition, parse_function_prototype, parse_open_curly, parse_local_scope, parse_close_curly, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
+	{ parse_local_scope,         parse_return_statement,                                                           grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  }
 };
 
 syntax_kind rule_kind[] = {
+	GLOBAL_SCOPE,
 	TYPE,
 	RETURN_STATEMENT,
 	FUNCTION_PROTOTYPE,
 	FUNCTION_DEFINITION,
-	STATEMENT_LIST
+	LOCAL_SCOPE
 };
 
 bool is_grammar_rule(ast* (rule) (token_ptr, int64_t)) {
@@ -226,7 +229,7 @@ ast* parse_top_level(token_ptr tokens, int64_t index) {
 	if(index + rule_len >= tokens.len) {
 		return NULL;
 	}
-	ast* node = parse_rule(tokens, &index, &parse_function_definition);
+	ast* node = parse_rule(tokens, &index, &parse_global_scope);
 	if(node == NULL) {
 		return NULL;
 	}
@@ -262,8 +265,11 @@ char* grammar_token_to_c_str(int32_t token) {
 		case RETURN_STATEMENT:
 			str = "RETURN_STATEMENT";
 			break;
-		case STATEMENT_LIST:
-			str = "STATEMENT_LIST";
+		case GLOBAL_SCOPE:
+			str = "GLOBAL_SCOPE";
+			break;
+		case LOCAL_SCOPE:
+			str = "LOCAL_SCOPE";
 			break;
 		case FUNCTION_PROTOTYPE:
 			str = "FUNCTION_PROTOTYPE";
@@ -568,6 +574,19 @@ ast* get_child(ast* node, int64_t index) {
 	return node->node.syntax.children[index];
 }
 
+bool is_global_scope(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind == TERMINAL) {
+		return false;
+	}
+	if(node->node.syntax.construct != GLOBAL_SCOPE) {
+		return false;
+	}
+	return true;
+}
+
 bool is_function_definition(ast* node) {
 	if(node == NULL) {
 		return false;
@@ -607,14 +626,14 @@ bool is_type(ast* node) {
 	return true;
 }
 
-bool is_statement_list(ast* node) {
+bool is_local_scope(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
 	if(node->kind == TERMINAL) {
 		return false;
 	}
-	if(node->node.syntax.construct != STATEMENT_LIST) {
+	if(node->node.syntax.construct != LOCAL_SCOPE) {
 		return false;
 	}
 	return true;
@@ -647,30 +666,30 @@ ast* function_return_type(ast* fun) {
 	return function_prototype_return_type(get_child(fun, 0));
 }
 
-ast* function_statement_list(ast* fun) {
+ast* function_local_scope(ast* fun) {
 	if(!is_function_definition(fun)) {
 		return NULL;
 	}
-	ast* statement_list = NULL;
+	ast* local_scope = NULL;
 	for(int64_t i = 0; get_child(fun, i) != NULL; i++) {
-		if(is_statement_list(get_child(fun, i))) {
-			statement_list = get_child(fun, i);
+		if(is_local_scope(get_child(fun, i))) {
+			local_scope = get_child(fun, i);
 			break;
 		}
 	}
-	return statement_list;
+	return local_scope;
 }
 
 ast* function_return_statement(ast* fun) {
 	if(!is_function_definition(fun)) {
 		return NULL;
 	}
-	ast* statement_list = function_statement_list(fun);
+	ast* local_scope = function_local_scope(fun);
 	ast* return_statement = NULL;
-	for(int64_t i = 0; get_child(statement_list, i) != NULL; i++) {
-		if(is_return_statement(get_child(statement_list, i))) {
+	for(int64_t i = 0; get_child(local_scope, i) != NULL; i++) {
+		if(is_return_statement(get_child(local_scope, i))) {
 			// TODO: There can be several returns. Keep a list of them
-			return_statement = get_child(statement_list, i);
+			return_statement = get_child(local_scope, i);
 		}
 	}
 	return return_statement;

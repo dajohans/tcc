@@ -109,7 +109,7 @@ int main() {
 	/* ast* syntax_tree = parse_function_definition(token_array, 0); */
 	print_ast(syntax_tree);
 
-	if(!return_type_check(syntax_tree)) {
+	if(!analyze_semantics(syntax_tree)) {
 		log_error("Type mismatch - Return value type and function return type differ");
 	}
 	code_gen(syntax_tree);

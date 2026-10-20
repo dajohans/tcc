@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "error.h"
 #include "code_gen.h"
 #include "parser.h"
 #include "string_view.h"
@@ -25,54 +26,42 @@ string* ast_to_assembly(ast* syntax_tree) {
 	if(syntax_tree == NULL) {
 		return NULL;
 	}
-	// TODO: The below implementation assumes that the functions name
-	// is main and that the statement is "return 0;". In other words,
-	// it's hard coded to be the minimal main program. But this
-	// demonstrates the basic idea. It remains to change the
-	// implementation to properly max the abstract syntax tree.
-	ast* statement_node = syntax_tree->node.syntax.children[2];
-	if(syntax_tree->kind == NON_TERMINAL && syntax_tree->node.syntax.construct == FUNCTION_DEFINITION) {
-		main_handling1 = str_append_sv(
-			make_string("call "),
-			syntax_tree->node.syntax.children[0]->node.syntax.children[1]->node.lex_token.lexeme
-		);
-		// TODO: Add functions to easily pick out certain language
-		// constructs from the syntax tree. For example, if I know
-		// that syntax_tree is a function definition, make a function
-		// to get the return type from its function prototype.
-		// Similarly, have a function which obtains the return value
-		// in the return statement below.
-		main_handling1 = str_append_c_str(
-			main_handling1,
-			"\n"
-			"mov rdi, rax\n"
-		);
-		if(main_handling1.cap < 0) {
-			return NULL;
-		}
-		impl_handling1 = str_append_c_str(set_string_from_sv(syntax_tree->node.syntax.children[0]->node.syntax.children[1]->node.lex_token.lexeme), ":\n");
-		if(impl_handling1.cap < 0) {
-			free_string(&main_handling1);
-			return NULL;
-		}
-		if(statement_node->kind == NON_TERMINAL && statement_node->node.syntax.construct == RETURN_STATEMENT) {
-		// TODO: Now we assume that this is a return statement. That
-		// needs to change
-			impl_handling2 = str_append_sv(
-				make_string("mov rax, "),
-				syntax_tree->node.syntax.children[2]->node.syntax.children[1]->node.lex_token.lexeme
-			);
-			impl_handling2 = str_append_c_str(
-				impl_handling2,
-				"\n"
-				"ret\n"
-			);
-			if(impl_handling2.cap < 0) {
-				free_string(&main_handling1);
-				free_string(&impl_handling1);
-				return NULL;
-			}
-		}
+	if(!is_function_definition(syntax_tree)) {
+		return NULL;
+	}
+	
+	main_handling1 = str_append_sv(
+		make_string("call "),
+		function_name(syntax_tree)->node.lex_token.lexeme
+	);
+	main_handling1 = str_append_c_str(
+		main_handling1,
+		"\n"
+		"mov rdi, rax\n"
+	);
+	if(main_handling1.cap < 0) {
+		return NULL;
+	}
+	impl_handling1 = str_append_c_str(set_string_from_sv(function_name(syntax_tree)->node.lex_token.lexeme), ":\n");
+	if(impl_handling1.cap < 0) {
+		free_string(&main_handling1);
+		return NULL;
+	}
+	// TODO: Now we assume that this is a return statement. That
+	// needs to change
+	impl_handling2 = str_append_sv(
+		make_string("mov rax, "),
+		return_statement_expression(function_return_statement(syntax_tree))->node.lex_token.lexeme
+	);
+	impl_handling2 = str_append_c_str(
+		impl_handling2,
+		"\n"
+		"ret\n"
+	);
+	if(impl_handling2.cap < 0) {
+		free_string(&main_handling1);
+		free_string(&impl_handling1);
+		return NULL;
 	}
 	string* ret = malloc(2 * sizeof(*ret));
 	if(ret == NULL) {
@@ -100,22 +89,24 @@ void code_gen(ast* syntax_tree) {
 	FILE *fp = fopen("a.s", "w");
 	string* impl = ast_to_assembly(syntax_tree);
 	if(impl == NULL) {
-		fprintf(fp,
-			ASSEMBLY_PREAMBLE_1"%s"ASSEMBLY_PREAMBLE_2"%s"ASSEMBLY_PREAMBLE_3"%s",
-			"", // data string: Sections .data and .section .rodata and such go here
-			"xor rdi, rdi", // main handling string: Code for calling main and handling its return value goes here
-			"" // function implementation string: Code which implements all functions goes here, including main()
-		);
-	} else {
-		fprintf(fp,
-			ASSEMBLY_PREAMBLE_1"%s"ASSEMBLY_PREAMBLE_2"%s"ASSEMBLY_PREAMBLE_3"%s",
-			"", // data string: Sections .data and .section .rodata and such go here
-			impl[0].c_str, // main handling string: Code for calling main and handling its return value goes here
-			impl[1].c_str // function implementation string: Code which implements all functions goes here, including main()
-		);
-	    free_string(&impl[0]);
-	    free_string(&impl[1]);
-	    free(impl);
+		log_error("Failed code generation");
+		/* fprintf(fp, */
+		/* 	ASSEMBLY_PREAMBLE_1"%s"ASSEMBLY_PREAMBLE_2"%s"ASSEMBLY_PREAMBLE_3"%s", */
+		/* 	"", // data string: Sections .data and .section .rodata and such go here */
+		/* 	"xor rdi, rdi", // main handling string: Code for calling main and handling its return value goes here */
+		/* 	"" // function implementation string: Code which implements all functions goes here, including main() */
+		/* ); */
+		fclose(fp);
+		return;
 	}
+	fprintf(fp,
+		ASSEMBLY_PREAMBLE_1"%s"ASSEMBLY_PREAMBLE_2"%s"ASSEMBLY_PREAMBLE_3"%s",
+		"", // data string: Sections .data and .section .rodata and such go here
+		impl[0].c_str, // main handling string: Code for calling main and handling its return value goes here
+		impl[1].c_str // function implementation string: Code which implements all functions goes here, including main()
+	);
+    free_string(&impl[0]);
+    free_string(&impl[1]);
+    free(impl);
 	fclose(fp);
 }

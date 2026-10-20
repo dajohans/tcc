@@ -112,7 +112,7 @@ int main() {
 	if(!return_type_check(syntax_tree)) {
 		log_error("Type mismatch - Return value type and function return type differ");
 	}
-	/* code_gen(syntax_tree); */
+	code_gen(syntax_tree);
 	
 	free_ast(syntax_tree);
 	free(token_array.ptr);

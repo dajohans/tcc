@@ -52,6 +52,18 @@ ast* parse_keyword_return(token_ptr tokens, int64_t index);
 ast* parse_number(token_ptr tokens, int64_t index);
 ast* parse_semicolon(token_ptr tokens, int64_t index);
 ast* parse_type(token_ptr tokens, int64_t index);
+ast* get_child(ast* node, int64_t index);
+bool is_function_definition(ast* node);
+bool is_function_prototype(ast* node);
+bool is_type(ast* node);
+bool is_statement_list(ast* node);
+bool is_return_statement(ast* node);
+ast* function_return_type(ast* fun);
+ast* function_statement_list(ast* fun);
+ast* function_return_statement(ast* fun);
+ast* function_prototype_name(ast* fun);
+ast* function_name(ast* fun);
+ast* return_statement_expression(ast* statement);
 void print_ast_helper(ast* syntax_tree, int64_t padding_count);
 void print_ast(ast* syntax_tree);
 

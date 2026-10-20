@@ -555,6 +555,147 @@ ast* parse_type(token_ptr tokens, int64_t index) {
 	return type_node;
 }
 
+ast* get_child(ast* node, int64_t index) {
+	if(node == NULL) {
+		return NULL;
+	}
+	if(node->kind == TERMINAL) {
+		return NULL;
+	}
+	if(index < 0 || index >= node->node.syntax.children_count) {
+		return NULL;
+	}
+	return node->node.syntax.children[index];
+}
+
+bool is_function_definition(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind == TERMINAL) {
+		return false;
+	}
+	if(node->node.syntax.construct != FUNCTION_DEFINITION) {
+		return false;
+	}
+	return true;
+}
+
+bool is_function_prototype(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind == TERMINAL) {
+		return false;
+	}
+	if(node->node.syntax.construct != FUNCTION_PROTOTYPE) {
+		return false;
+	}
+	return true;
+}
+
+bool is_type(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind == TERMINAL) {
+		return false;
+	}
+	if(node->node.syntax.construct != TYPE) {
+		return false;
+	}
+	return true;
+}
+
+bool is_statement_list(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind == TERMINAL) {
+		return false;
+	}
+	if(node->node.syntax.construct != STATEMENT_LIST) {
+		return false;
+	}
+	return true;
+}
+
+bool is_return_statement(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind == TERMINAL) {
+		return false;
+	}
+	if(node->node.syntax.construct != RETURN_STATEMENT) {
+		return false;
+	}
+	return true;
+}
+
+ast* function_prototype_return_type(ast* fun) {
+	if(!is_function_prototype(fun)) {
+		return NULL;
+	}
+	return get_child(fun, 0);
+}
+
+ast* function_return_type(ast* fun) {
+	if(!is_function_definition(fun)) {
+		return NULL;
+	}
+	return function_prototype_return_type(get_child(fun, 0));
+}
+
+ast* function_statement_list(ast* fun) {
+	if(!is_function_definition(fun)) {
+		return NULL;
+	}
+	ast* statement_list = NULL;
+	for(int64_t i = 0; get_child(fun, i) != NULL; i++) {
+		if(is_statement_list(get_child(fun, i))) {
+			statement_list = get_child(fun, i);
+			break;
+		}
+	}
+	return statement_list;
+}
+
+ast* function_return_statement(ast* fun) {
+	if(!is_function_definition(fun)) {
+		return NULL;
+	}
+	ast* return_statement = NULL;
+	for(int64_t i = 0; get_child(fun, i) != NULL; i++) {
+		if(is_return_statement(get_child(fun, i))) {
+			// TODO: There can be several returns. Keep a list of them
+			return_statement = get_child(fun, i);
+		}
+	}
+	return return_statement;
+}
+
+ast* function_prototype_name(ast* fun) {
+	if(!is_function_prototype(fun)) {
+		return NULL;
+	}
+	return get_child(fun, 1);
+}
+
+ast* function_name(ast* fun) {
+	if(!is_function_definition(fun)) {
+		return NULL;
+	}
+	return function_prototype_name(get_child(fun, 0));
+}
+
+ast* return_statement_expression(ast* statement) {
+	if(!is_return_statement(statement)) {
+		return NULL;
+	}
+	return get_child(statement, 1);
+}
+
 void print_ast_helper(ast* syntax_tree, int64_t padding_count) {
 	for(int64_t i = 0; i < padding_count; i++) {
 		printf("  ");

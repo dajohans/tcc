@@ -2,7 +2,7 @@
 # Torsö C Compiler (TCC)
 
 This is just my attempt at getting back into programming, by implementing a project I have long wanted to do.
-[Torsö](https://en.wikipedia.org/wiki/Torsö) is an island in Sweden.
+The project name comes from [Torsö](https://en.wikipedia.org/wiki/Torsö) which is an island in Sweden.
 
 ## Goals
 

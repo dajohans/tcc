@@ -110,7 +110,7 @@ int main() {
 	print_ast(syntax_tree);
 	type_table tbl = create_global_type_table();
 	print_type_table(tbl);
-	free_type_table(tbl);
+	free_type_table(&tbl);
 
 	if(!analyze_semantics(syntax_tree)) {
 		log_error("Type mismatch - Return value type and function return type differ");

@@ -751,6 +751,27 @@ void print_type_table(type_table tbl) {
 	}
 }
 
+bool realloc_type_table(type_table* tbl) {
+	int64_t size = 1;
+	if(tbl->type_cap > 0) {
+		size = 2 * tbl->type_cap;
+	}
+	type_info* tmp = malloc(size * sizeof(*tmp));
+	if(tmp == NULL) {
+		log_error("Failed to reallocate memory for type table");
+		return false;
+	}
+	for(int64_t i = 0; i < tbl->type_cap; i++) {
+		tmp[i] = tbl->types[i];
+	}
+	if(tbl->types != NULL) {
+		free(tbl->types);
+	}
+	tbl->types = tmp;
+	tbl->type_cap = size;
+	return true;
+}
+
 type_table create_global_type_table() {
 	type_table tbl = (type_table) {
 		.types = NULL,
@@ -771,7 +792,14 @@ type_table create_global_type_table() {
 
 	for(int64_t i = 0; i < ARR_LEN(builtin_types); i++) {
 		if(tbl.type_count >= tbl.type_cap) {
-			// Reallocate
+			if(!realloc_type_table(&tbl)) {
+				log_error("Failed to create type table");
+				return (type_table) {
+					.types = NULL,
+					.type_count = -1,
+					.type_cap = -1
+				};
+			}
 		}
 		tbl.type_count++;
 		tbl.types[i].id = tbl.type_count;
@@ -781,13 +809,14 @@ type_table create_global_type_table() {
 	return tbl;
 }
  
-bool free_type_table(type_table tbl) {
-	if(tbl.types == NULL) {
+bool free_type_table(type_table* tbl) {
+	if(tbl->types == NULL) {
 		log_error("Attempted double free on type table");
 		return false;
 	}
-	free(tbl.types);
-	tbl.type_cap = -1;
-	tbl.type_count = -1;
+	free(tbl->types);
+	tbl->types = NULL;
+	tbl->type_cap = -1;
+	tbl->type_count = -1;
 	return true;
 }

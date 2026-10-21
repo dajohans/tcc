@@ -81,7 +81,8 @@ ast* return_statement_expression(ast* statement);
 void print_ast_helper(ast* syntax_tree, int64_t padding_count);
 void print_ast(ast* syntax_tree);
 void print_type_table(type_table tbl);
+bool realloc_type_table(type_table* tbl);
 type_table create_global_type_table();
-bool free_type_table(type_table tbl);
+bool free_type_table(type_table* tbl);
 
 #endif // PARSER_H

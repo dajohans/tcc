@@ -81,30 +81,95 @@ bool is_grammar_rule(ast* (rule) (token_ptr, int64_t)) {
 	return found;
 }
 
-bool ast_add_child(ast* tree, ast* child) {
-	if(tree->kind == TERMINAL) {
-		return false;
+ast* ast_scope_add_child(ast* tree, ast* child) {
+	if(tree == NULL) {
+		return NULL;
 	}
-	if(tree->node.syntax.children_count == -1) {
-		tree->node.syntax.children = malloc(RULE_LEN * sizeof(*tree->node.syntax.children));
-		if(tree->node.syntax.children == NULL) {
-			log_error("Failed memory allocation while adding AST child node");
-			return false;
+	if(tree->kind != SCOPE) {
+		return NULL;
+	}
+	if(tree->node.scope.children_count == -1) {
+		tree->node.scope.children = malloc(RULE_LEN * sizeof(*tree->node.scope.children));
+		if(tree->node.scope.children == NULL) {
+			log_error("Failed memory allocation while adding child to AST scope node");
+			return NULL;
 		}
-		tree->node.syntax.children_count = 0;
+		tree->node.scope.children_count = 0;
 		if(child->kind == TERMINAL) {
-			tree->node.syntax.first_char_index = child->node.lex_token.first_char_index;
-		} else {
-			tree->node.syntax.first_char_index = child->node.syntax.first_char_index;
+			tree->node.scope.first_char_index = child->node.lex_token.first_char_index;
+		} else if (child->kind == NON_TERMINAL){
+			tree->node.scope.first_char_index = child->node.syntax.first_char_index;
+		} else if (child->kind == SCOPE){
+			tree->node.scope.first_char_index = child->node.scope.first_char_index;
 		}
 	}
 	if(child->kind == TERMINAL) {
 		tree->node.syntax.last_char_index = child->node.lex_token.last_char_index;
-	} else {
+	} else if (child->kind == NON_TERMINAL){
+		tree->node.scope.last_char_index = child->node.syntax.last_char_index;
+	} else if (child->kind == SCOPE){
+		tree->node.scope.last_char_index = child->node.scope.last_char_index;
+	}
+	tree->node.scope.children[tree->node.scope.children_count] = child;
+	tree->node.scope.children_count++;
+	return tree;
+}
+
+ast* ast_nonterminal_add_child(ast* tree, ast* child) {
+	if(tree == NULL) {
+		return NULL;
+	}
+	if(tree->kind != NON_TERMINAL) {
+		return NULL;
+	}
+	if(tree->node.syntax.children_count == -1) {
+		tree->node.syntax.children = malloc(RULE_LEN * sizeof(*tree->node.syntax.children));
+		if(tree->node.syntax.children == NULL) {
+			log_error("Failed memory allocation while adding child to AST non-terminal node");
+			return NULL;
+		}
+		tree->node.syntax.children_count = 0;
+		if(child->kind == TERMINAL) {
+			tree->node.syntax.first_char_index = child->node.lex_token.first_char_index;
+		} else if (child->kind == NON_TERMINAL){
+			tree->node.syntax.first_char_index = child->node.syntax.first_char_index;
+		} else if (child->kind == SCOPE){
+			tree->node.scope.first_char_index = child->node.syntax.first_char_index;
+		}
+	}
+	if(child->kind == TERMINAL) {
+		tree->node.syntax.last_char_index = child->node.lex_token.last_char_index;
+	} else if (child->kind == NON_TERMINAL){
 		tree->node.syntax.last_char_index = child->node.syntax.last_char_index;
+	} else if (child->kind == SCOPE){
+		tree->node.scope.last_char_index = child->node.syntax.last_char_index;
 	}
 	tree->node.syntax.children[tree->node.syntax.children_count] = child;
 	tree->node.syntax.children_count++;
+	return tree;
+}
+
+bool ast_add_child(ast* tree, ast* child) {
+	if(tree == NULL) {
+		return false;
+	}
+	if(tree->kind == TERMINAL) {
+		return false;
+	}
+	if(tree->kind == NON_TERMINAL) {
+		ast* result = ast_nonterminal_add_child(tree, child);
+		if(result == NULL) {
+			log_error("Failed to add child to AST non-terminal node");
+			return false;
+		}
+	}
+	if(tree->kind == SCOPE) {
+		ast* result = ast_scope_add_child(tree, child);
+		if(result == NULL) {
+			log_error("Failed to add child to AST scope node");
+			return false;
+		}
+	}
 	return true;
 }
 

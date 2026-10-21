@@ -16,7 +16,8 @@ typedef enum {
 
 typedef enum {
 	TERMINAL, // A lexical token
-	NON_TERMINAL // Left-hand side in a grammar rule
+	NON_TERMINAL, // Left-hand side in a grammar rule
+	SCOPE
 } ast_kind;
 
 typedef struct {
@@ -27,14 +28,6 @@ typedef struct {
 	struct abstract_syntax_tree** children;
 	int64_t children_count;
 } syntax_construct;
-
-typedef struct abstract_syntax_tree {
-	ast_kind kind;
-	union {
-		token lex_token;
-		syntax_construct syntax;
-	} node;
-} ast;
 
 typedef struct type_info {
 	int64_t id;
@@ -48,6 +41,31 @@ typedef struct type_table {
 	// Possibly add info about where in source it was defined
 } type_table;
 
+typedef struct {
+	type_table types;
+	syntax_kind construct;
+	int64_t first_char_index;
+	int64_t last_char_index;
+	
+	struct abstract_syntax_tree** children;
+	int64_t children_count;
+} scope;
+
+typedef struct abstract_syntax_tree {
+	ast_kind kind;
+	union {
+		token lex_token;
+		syntax_construct syntax;
+		scope scope;
+	} node;
+} ast;
+
+bool is_grammar_rule(ast* (rule) (token_ptr, int64_t));
+ast* ast_scope_add_child(ast* tree, ast* child);
+ast* ast_nonterminal_add_child(ast* tree, ast* child);
+bool ast_add_child(ast* tree, ast* child);
+int64_t ast_num_tokens_helper(ast* syntax_tree);
+int64_t ast_num_tokens(ast* syntax_tree);
 ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t));
 ast* parse_top_level(token_ptr tokens, int64_t index);
 void free_ast_helper(ast* syntax_tree);

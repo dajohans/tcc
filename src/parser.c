@@ -23,6 +23,13 @@
  * tree* testnode = &testdata.node;
  * printf("test node deref: %d\n", container_of(testnode, node, data)->x);
  */
+ 
+static char* builtin_types [] = {
+	"char",
+	"int",
+	"float",
+	"double"
+};
 
 ast* grammar_end(token_ptr, int64_t) { return NULL; }
 ast* parse_return_statement(token_ptr, int64_t) { return NULL; }
@@ -737,5 +744,50 @@ void print_ast(ast* syntax_tree) {
 	print_ast_helper(syntax_tree, 0);
 }
 
+void print_type_table(type_table tbl) {
+	printf("Type table:\nName (id)\n-----------\n");
+	for(int64_t i = 0; i < tbl.type_count; i++) {
+		printf("%.*s (%ld)\n", SV_ARG(tbl.types[i].name), tbl.types[i].id);
+	}
+}
+
+type_table create_global_type_table() {
+	type_table tbl = (type_table) {
+		.types = NULL,
+		.type_count = -1,
+		.type_cap = -1
+	};
+	tbl.types = malloc(ARR_LEN(builtin_types) * sizeof(*tbl.types));
+	if(tbl.types == NULL) {
+		log_error("Failed to allocate memory for type table");
+		return (type_table) {
+			.types = NULL,
+			.type_count = -1,
+			.type_cap = -1
+		};
+	}
+	tbl.type_count = 0;
+	tbl.type_cap = ARR_LEN(builtin_types);
+
+	for(int64_t i = 0; i < ARR_LEN(builtin_types); i++) {
+		if(tbl.type_count >= tbl.type_cap) {
+			// Reallocate
+		}
+		tbl.type_count++;
+		tbl.types[i].id = tbl.type_count;
+		tbl.types[i].name = set_sv_ptr(builtin_types[i], c_str_len(builtin_types[i]));
+
+	}
+	return tbl;
+}
  
- 
+bool free_type_table(type_table tbl) {
+	if(tbl.types == NULL) {
+		log_error("Attempted double free on type table");
+		return false;
+	}
+	free(tbl.types);
+	tbl.type_cap = -1;
+	tbl.type_count = -1;
+	return true;
+}

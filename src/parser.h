@@ -36,6 +36,18 @@ typedef struct abstract_syntax_tree {
 	} node;
 } ast;
 
+typedef struct type_info {
+	int64_t id;
+	string_view name;
+} type_info;
+
+typedef struct type_table {
+	type_info* types;
+	int64_t type_count;
+	int64_t type_cap;
+	// Possibly add info about where in source it was defined
+} type_table;
+
 ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t));
 ast* parse_top_level(token_ptr tokens, int64_t index);
 void free_ast_helper(ast* syntax_tree);
@@ -68,5 +80,8 @@ ast* function_name(ast* fun);
 ast* return_statement_expression(ast* statement);
 void print_ast_helper(ast* syntax_tree, int64_t padding_count);
 void print_ast(ast* syntax_tree);
+void print_type_table(type_table tbl);
+type_table create_global_type_table();
+bool free_type_table(type_table tbl);
 
 #endif // PARSER_H

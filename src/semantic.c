@@ -5,11 +5,6 @@
 #include "semantic.h"
 #include "string_view.h"
 
-typedef struct type_info {
-	int64_t id;
-	string_view name;
-} type_info;
-
 bool analyze_semantics(ast* syntax_tree) {
 	if(!is_global_scope(syntax_tree)) {
 		return false;

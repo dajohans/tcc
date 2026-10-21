@@ -217,14 +217,25 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 	if(top_node == NULL) {
 		return NULL;
 	}
-	top_node->kind = NON_TERMINAL;
-	top_node->node.syntax = (syntax_construct) {
-		.construct = current_rule_kind,
-		.first_char_index = -1,
-		.last_char_index = -1,
-		.children = NULL,
-		.children_count = -1
-	};
+	if(current_rule_kind == GLOBAL_SCOPE || current_rule_kind == LOCAL_SCOPE) {
+		top_node->kind = SCOPE;
+		top_node->node.scope = (scope) {
+			.construct = current_rule_kind,
+			.first_char_index = -1,
+			.last_char_index = -1,
+			.children = NULL,
+			.children_count = -1
+		};
+	} else {
+		top_node->kind = NON_TERMINAL;
+		top_node->node.syntax = (syntax_construct) {
+			.construct = current_rule_kind,
+			.first_char_index = -1,
+			.last_char_index = -1,
+			.children = NULL,
+			.children_count = -1
+		};
+	}
 	bool successful_rule_parse = true;
 	
 	for(int64_t l = 0; l < ARR_LEN(grammar); l++) {
@@ -317,6 +328,12 @@ void free_ast_helper(ast* syntax_tree) {
 			free_ast_helper(syntax_tree->node.syntax.children[i]);
 		}
 		free(syntax_tree->node.syntax.children);
+	}
+	if(syntax_tree->kind == SCOPE) {
+		for(int64_t i = 0; i < syntax_tree->node.scope.children_count; i++) {
+			free_ast_helper(syntax_tree->node.scope.children[i]);
+		}
+		free(syntax_tree->node.scope.children);
 	}
 	free(syntax_tree);
 }
@@ -796,6 +813,11 @@ void print_ast_helper(ast* syntax_tree, int64_t padding_count) {
 		printf("%s\n", grammar_token_to_c_str(syntax_tree->node.syntax.construct));
 		for(int64_t i = 0; i < syntax_tree->node.syntax.children_count; i++) {
 			print_ast_helper(syntax_tree->node.syntax.children[i], padding_count + 1);
+		}
+	} else if(syntax_tree->kind == SCOPE) {
+		printf("%s\n", grammar_token_to_c_str(syntax_tree->node.scope.construct));
+		for(int64_t i = 0; i < syntax_tree->node.scope.children_count; i++) {
+			print_ast_helper(syntax_tree->node.scope.children[i], padding_count + 1);
 		}
 	} else {
 		printf("%s - %.*s\n", token_to_c_str(syntax_tree->node.lex_token.token_kind), SV_ARG(syntax_tree->node.lex_token.lexeme));

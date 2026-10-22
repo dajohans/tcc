@@ -35,9 +35,9 @@ typedef struct type_info {
 } type_info;
 
 typedef struct type_table {
-	type_info* types;
-	int64_t type_count;
-	int64_t type_cap;
+	type_info* table;
+	int64_t table_len;
+	int64_t table_cap;
 	// Possibly add info about where in source it was defined
 } type_table;
 
@@ -66,6 +66,8 @@ ast* ast_nonterminal_add_child(ast* tree, ast* child);
 bool ast_add_child(ast* tree, ast* child);
 int64_t ast_num_tokens_helper(ast* syntax_tree);
 int64_t ast_num_tokens(ast* syntax_tree);
+bool is_scope_rule(syntax_kind rule);
+syntax_kind get_rule_kind(ast* (rule) (token_ptr, int64_t));
 ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t));
 ast* parse_top_level(token_ptr tokens, int64_t index);
 void free_ast_helper(ast* syntax_tree);

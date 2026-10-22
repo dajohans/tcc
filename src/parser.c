@@ -196,10 +196,11 @@ int64_t ast_num_tokens(ast* syntax_tree) {
 	return ast_num_tokens_helper(syntax_tree);
 }
 
-ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t)) {
-	if(*index >= tokens.len) {
-		return NULL;
-	}
+bool is_scope_rule(syntax_kind rule) {
+	return rule == GLOBAL_SCOPE || rule == LOCAL_SCOPE;
+}
+
+syntax_kind get_rule_kind(ast* (rule) (token_ptr, int64_t)) {
 	syntax_kind current_rule_kind = AST_ERROR;
 	for(int64_t i = 0; i < ARR_LEN(grammar); i++) {
 		if(rule == grammar[i][0]) {
@@ -207,6 +208,14 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 			break;
 		}
 	}
+	return current_rule_kind;
+}
+
+ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t)) {
+	if(*index >= tokens.len) {
+		return NULL;
+	}
+	syntax_kind current_rule_kind = get_rule_kind(rule);
 	if(current_rule_kind == AST_ERROR) {
 		return NULL;
 	}
@@ -215,11 +224,18 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 	ast *nodes[RULE_LEN - 1]; // -1 since the first element in each grammar rule is a placeholder
 	ast* top_node = malloc(sizeof(*top_node));
 	if(top_node == NULL) {
+		log_error("Failed to allocate memory for ast top node");
 		return NULL;
 	}
-	if(current_rule_kind == GLOBAL_SCOPE || current_rule_kind == LOCAL_SCOPE) {
+	if(is_scope_rule(current_rule_kind)) {
+		type_table tbl = create_global_type_table();
+		if(tbl.table == NULL) {
+			log_error("Failed to add type table to global scope");
+			return NULL;
+		}
 		top_node->kind = SCOPE;
 		top_node->node.scope = (scope) {
+			.types = tbl,
 			.construct = current_rule_kind,
 			.first_char_index = -1,
 			.last_char_index = -1,
@@ -333,6 +349,7 @@ void free_ast_helper(ast* syntax_tree) {
 		for(int64_t i = 0; i < syntax_tree->node.scope.children_count; i++) {
 			free_ast_helper(syntax_tree->node.scope.children[i]);
 		}
+		free(syntax_tree->node.scope.types.table);
 		free(syntax_tree->node.scope.children);
 	}
 	free(syntax_tree);
@@ -833,77 +850,77 @@ void print_ast(ast* syntax_tree) {
 
 void print_type_table(type_table tbl) {
 	printf("Type table:\nName (id)\n-----------\n");
-	for(int64_t i = 0; i < tbl.type_count; i++) {
-		printf("%.*s (%ld)\n", SV_ARG(tbl.types[i].name), tbl.types[i].id);
+	for(int64_t i = 0; i < tbl.table_len; i++) {
+		printf("%.*s (%ld)\n", SV_ARG(tbl.table[i].name), tbl.table[i].id);
 	}
 }
 
 bool realloc_type_table(type_table* tbl) {
 	int64_t size = 1;
-	if(tbl->type_cap > 0) {
-		size = 2 * tbl->type_cap;
+	if(tbl->table_cap > 0) {
+		size = 2 * tbl->table_cap;
 	}
 	type_info* tmp = malloc(size * sizeof(*tmp));
 	if(tmp == NULL) {
 		log_error("Failed to reallocate memory for type table");
 		return false;
 	}
-	for(int64_t i = 0; i < tbl->type_cap; i++) {
-		tmp[i] = tbl->types[i];
+	for(int64_t i = 0; i < tbl->table_cap; i++) {
+		tmp[i] = tbl->table[i];
 	}
-	if(tbl->types != NULL) {
-		free(tbl->types);
+	if(tbl->table != NULL) {
+		free(tbl->table);
 	}
-	tbl->types = tmp;
-	tbl->type_cap = size;
+	tbl->table = tmp;
+	tbl->table_cap = size;
 	return true;
 }
 
 type_table create_global_type_table() {
 	type_table tbl = (type_table) {
-		.types = NULL,
-		.type_count = -1,
-		.type_cap = -1
+		.table = NULL,
+		.table_len = -1,
+		.table_cap = -1
 	};
-	tbl.types = malloc(ARR_LEN(builtin_types) * sizeof(*tbl.types));
-	if(tbl.types == NULL) {
+	tbl.table = malloc(ARR_LEN(builtin_types) * sizeof(*tbl.table));
+	if(tbl.table == NULL) {
 		log_error("Failed to allocate memory for type table");
 		return (type_table) {
-			.types = NULL,
-			.type_count = -1,
-			.type_cap = -1
+			.table = NULL,
+			.table_len = -1,
+			.table_cap = -1
 		};
 	}
-	tbl.type_count = 0;
-	tbl.type_cap = ARR_LEN(builtin_types);
+	tbl.table_len = 0;
+	tbl.table_cap = ARR_LEN(builtin_types);
 
 	for(int64_t i = 0; i < ARR_LEN(builtin_types); i++) {
-		if(tbl.type_count >= tbl.type_cap) {
+		if(tbl.table_len >= tbl.table_cap) {
 			if(!realloc_type_table(&tbl)) {
 				log_error("Failed to create type table");
 				return (type_table) {
-					.types = NULL,
-					.type_count = -1,
-					.type_cap = -1
+					.table = NULL,
+					.table_len = -1,
+					.table_cap = -1
 				};
 			}
 		}
-		tbl.type_count++;
-		tbl.types[i].id = tbl.type_count;
-		tbl.types[i].name = set_sv_ptr(builtin_types[i], c_str_len(builtin_types[i]));
+		tbl.table_len++;
+		tbl.table[i].id = tbl.table_len;
+		tbl.table[i].name = set_sv_ptr(builtin_types[i], c_str_len(builtin_types[i]));
 
 	}
 	return tbl;
 }
  
 bool free_type_table(type_table* tbl) {
-	if(tbl->types == NULL) {
+	if(tbl->table == NULL) {
 		log_error("Attempted double free on type table");
 		return false;
 	}
-	free(tbl->types);
-	tbl->types = NULL;
-	tbl->type_cap = -1;
-	tbl->type_count = -1;
+	free(tbl->table);
+	tbl->table = NULL;
+	tbl->table_len = -1;
+	tbl->table_len = -1;
 	return true;
 }

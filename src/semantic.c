@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "ast.h"
 #include "error.h"
 #include "lexer.h"
 #include "semantic.h"

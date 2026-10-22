@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "ast.h"
 #include "code_gen.h"
 #include "error.h"
 #include "file_io.h"

@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -std=c2x -Wall -Wextra -g -fsanitize=address,undefined,leak,pointer-compare,pointer-subtract
 
-source := out/main.o out/string_view.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o out/code_gen.o out/semantic.o
+source := out/main.o out/string_view.o out/file_io.o out/lexer.o out/pointer.o out/error.o out/parser.o out/code_gen.o out/semantic.o out/ast.o
 testing_source := $(filter-out out/main.o, $(source))
 testing_source += tests/test_main.c
 

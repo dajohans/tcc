@@ -113,6 +113,7 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 			return NULL;
 		}
 		top_node->kind = SCOPE;
+		top_node->parent = NULL;
 		top_node->node.scope = (scope) {
 			.types = tbl,
 			.construct = current_rule_kind,
@@ -123,6 +124,7 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 		};
 	} else {
 		top_node->kind = NON_TERMINAL;
+		top_node->parent = NULL;
 		top_node->node.syntax = (syntax_construct) {
 			.construct = current_rule_kind,
 			.first_char_index = -1,

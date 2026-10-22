@@ -56,6 +56,7 @@ typedef struct {
 
 typedef struct abstract_syntax_tree {
 	ast_kind kind;
+	struct abstract_syntax_tree* parent;
 	union {
 		token lex_token;
 		syntax_construct syntax;

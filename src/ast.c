@@ -185,10 +185,10 @@ int64_t ast_get_last_char_index(ast* tree) {
 }
 
 bool ast_add_child(ast* tree, ast* child) {
-	if(tree == NULL) {
+	if(tree == NULL || child == NULL) {
 		return false;
 	}
-	if(tree->kind == TERMINAL) {
+	if(!ast_can_have_children(tree)) {
 		return false;
 	}
 	if(ast_child_count(tree) >= ast_child_cap(tree)) {
@@ -200,6 +200,7 @@ bool ast_add_child(ast* tree, ast* child) {
 	}
 	
 	ast_set_last_char_index(tree, ast_get_last_char_index(child));
+	child->parent = tree;
 	
 	if(tree->kind == NON_TERMINAL) {
 		ast* result = ast_nonterminal_insert_child(tree, child);
@@ -273,6 +274,7 @@ ast* init_ast_syntax_node(syntax_kind kind, int64_t first, int64_t last) {
 		return NULL;
 	}
 	node->kind = NON_TERMINAL;
+	node->parent = NULL;
 	node->node.syntax = (syntax_construct) {
 		.construct = kind,
 		.first_char_index = first,
@@ -290,6 +292,7 @@ ast* init_ast_token_node(token lexical_token) {
 		return NULL;
 	}
 	node->kind = TERMINAL;
+	node->parent = NULL;
 	node->node.lex_token = lexical_token;
 	return node;
 }

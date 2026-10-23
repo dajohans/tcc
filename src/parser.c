@@ -121,7 +121,8 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 			.first_char_index = -1,
 			.last_char_index = -1,
 			.children = NULL,
-			.children_count = -1
+			.children_count = 0,
+			.children_cap = 0
 		};
 	} else {
 		top_node->kind = NON_TERMINAL;
@@ -131,7 +132,8 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 			.first_char_index = -1,
 			.last_char_index = -1,
 			.children = NULL,
-			.children_count = -1
+			.children_count = 0,
+			.children_cap = 0
 		};
 	}
 	bool successful_rule_parse = true;
@@ -455,12 +457,16 @@ ast* parse_type_identifier(token_ptr tokens, int64_t index) {
 /* } */
 
 bool is_type_in_table(type_table types, ast* type_node) {
-	if(is_type(type_node) || types.table == NULL) {
+	if(!is_type(type_node)) {
 		return false;
 	}
+	if(types.table == NULL) {
+		return false;
+	}
+	ast* type_id = get_child(type_node, 0);
 	bool found_type = false;
 	for(int64_t i = 0; i < types.table_len; i++) {
-		if(sv_cmp(type_node->node.lex_token.lexeme, types.table[i].name)) {
+		if(sv_cmp(type_id->node.lex_token.lexeme, types.table[i].name)) {
 			found_type = true;
 			break;
 		}
@@ -469,7 +475,7 @@ bool is_type_in_table(type_table types, ast* type_node) {
 }
 
 bool type_exists(ast* type_node) {
-	if(is_type(type_node)) {
+	if(!is_type(type_node)) {
 		return false;
 	}
 	bool found_type = false;
@@ -491,13 +497,13 @@ bool parse_type_fixing(ast* syntax_tree) {
 	//   2. Check that any ast node marked as type has a lexeme which
 	//      exists in an available type table.
 	if(syntax_tree == NULL) {
-		return NULL;
+		return false;
 	}
 	bool all_types_valid = true;
 	for(int64_t i = 0; i < ast_child_count(syntax_tree); i++) {
 		ast* child = get_child(syntax_tree, i);
 		if(!is_type(child)) {
-			if(child->kind != TERMINAL) {
+			if(ast_can_have_children(child)) {
 				if(!parse_type_fixing(child)) {
 					all_types_valid = false;
 					break;

@@ -11,13 +11,6 @@ static char* builtin_types [] = {
 	"double"
 };
 
-/* ast* copy_ast_terminal(ast* dest, ast* src) { */
-/* } */
-/* ast* copy_ast_nonterminal(ast* dest, ast* src) { */
-/* } */
-/* ast* copy_ast_scope(ast* dest, ast* src) { */
-/* } */
-
 ast* copy_ast_node(ast* dest, ast* src) {
 	if(dest == NULL || src == NULL) {
 		return NULL;
@@ -25,13 +18,10 @@ ast* copy_ast_node(ast* dest, ast* src) {
 	dest->kind = src->kind;
 	if(dest->kind == TERMINAL) {
 		dest->node.lex_token = src->node.lex_token;
-		/* copy_ast_terminal(dest, src); */
 	} else if(dest->kind == NON_TERMINAL) {
 		dest->node.syntax = src->node.syntax;
-		/* copy_ast_nonterminal(dest, src); */
 	} else if(dest->kind == SCOPE) {
 		dest->node.scope = src->node.scope;
-		/* copy_ast_scope(dest, src); */
 	}
 	return dest;
 }
@@ -40,23 +30,7 @@ int64_t ast_child_count(ast* node) {
 	if(node == NULL) {
 		return -1;
 	}
-	if(node->kind == TERMINAL) {
-		return 0;
-	}
-	int64_t num = -1;
-	if(node->kind == NON_TERMINAL) {
-		num = node->node.syntax.children_cap;
-	} else if(node->kind == SCOPE) {
-		num = node->node.scope.children_cap;
-	}
-	return num;
-}
-
-int64_t ast_child_cap(ast* node) {
-	if(node == NULL) {
-		return -1;
-	}
-	if(node->kind == TERMINAL) {
+	if(!ast_can_have_children(node)) {
 		return 0;
 	}
 	int64_t num = -1;
@@ -68,11 +42,24 @@ int64_t ast_child_cap(ast* node) {
 	return num;
 }
 
-ast* ast_scope_insert_child(ast* tree, ast* child) {
-	if(tree == NULL) {
-		return NULL;
+int64_t ast_child_cap(ast* node) {
+	if(node == NULL) {
+		return -1;
 	}
-	if(tree->kind != SCOPE) {
+	if(!ast_can_have_children(node)) {
+		return 0;
+	}
+	int64_t num = -1;
+	if(node->kind == NON_TERMINAL) {
+		num = node->node.syntax.children_cap;
+	} else if(node->kind == SCOPE) {
+		num = node->node.scope.children_cap;
+	}
+	return num;
+}
+
+ast* ast_scope_insert_child(ast* tree, ast* child) {
+	if(!is_scope(tree)){
 		return NULL;
 	}
 	if(ast_child_count(tree) >= ast_child_cap(tree)) {
@@ -149,10 +136,35 @@ ast* ast_realloc_children(ast* tree) {
 		log_error("Failed to reallocate children of ast");
 		return NULL;
 	}
+	ast_set_child_cap(tree, new_cap);
 	for(int64_t i = 0; i < ast_child_count(tree); i++) {
 		tmp[i] = get_child(tree, i);
 	}
 	return ast_set_child_array(tree, tmp, ast_child_count(tree), ast_child_cap(tree));
+}
+
+ast* ast_set_child_count(ast* tree, int64_t count) {
+	if(!ast_can_have_children(tree)) {
+		return NULL;
+	}
+	if(tree->kind == NON_TERMINAL) {
+		tree->node.syntax.children_count = count;
+	} else if(tree->kind == SCOPE) {
+		tree->node.scope.children_count = count;
+	}
+	return tree;
+}
+
+ast* ast_set_child_cap(ast* tree, int64_t cap) {
+	if(!ast_can_have_children(tree)) {
+		return NULL;
+	}
+	if(tree->kind == NON_TERMINAL) {
+		tree->node.syntax.children_cap = cap;
+	} else if(tree->kind == SCOPE) {
+		tree->node.scope.children_cap = cap;
+	}
+	return tree;
 }
 
 ast* ast_set_last_char_index(ast* tree, int64_t index) {
@@ -280,7 +292,8 @@ ast* init_ast_syntax_node(syntax_kind kind, int64_t first, int64_t last) {
 		.first_char_index = first,
 		.last_char_index = last,
 		.children = NULL,
-		.children_count = -1
+		.children_count = -1,
+		.children_cap = -1
 	};
 	return node;
 }
@@ -333,7 +346,7 @@ ast* get_child(ast* node, int64_t index) {
 	if(node->kind == TERMINAL) {
 		return NULL;
 	}
-	if(index < 0 || index >= node->node.syntax.children_count) {
+	if(index < 0 || index >= ast_child_count(node)) {
 		return NULL;
 	}
 	ast* child = NULL;
@@ -356,20 +369,24 @@ bool is_global_scope(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind == TERMINAL) {
+	if(node->kind != SCOPE) {
 		return false;
 	}
-	if(node->node.syntax.construct != GLOBAL_SCOPE) {
+	if(node->node.scope.construct != GLOBAL_SCOPE) {
 		return false;
 	}
 	return true;
+}
+
+bool is_scope(ast* node) {
+	return is_global_scope(node) || is_local_scope(node);
 }
 
 bool is_function_definition(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind == TERMINAL) {
+	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
 	if(node->node.syntax.construct != FUNCTION_DEFINITION) {
@@ -382,7 +399,7 @@ bool is_function_prototype(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind == TERMINAL) {
+	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
 	if(node->node.syntax.construct != FUNCTION_PROTOTYPE) {
@@ -395,7 +412,7 @@ bool is_type(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind == TERMINAL) {
+	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
 	if(node->node.syntax.construct != TYPE) {
@@ -408,10 +425,10 @@ bool is_local_scope(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind == TERMINAL) {
+	if(node->kind != SCOPE) {
 		return false;
 	}
-	if(node->node.syntax.construct != LOCAL_SCOPE) {
+	if(node->node.scope.construct != LOCAL_SCOPE) {
 		return false;
 	}
 	return true;
@@ -421,7 +438,7 @@ bool is_return_statement(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind == TERMINAL) {
+	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
 	if(node->node.syntax.construct != RETURN_STATEMENT) {

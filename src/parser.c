@@ -31,6 +31,7 @@ ast* parse_function_prototype(token_ptr, int64_t) { return NULL; }
 ast* parse_function_definition(token_ptr, int64_t) { return NULL; }
 ast* parse_local_scope(token_ptr, int64_t) { return NULL; }
 ast* parse_global_scope(token_ptr, int64_t) { return NULL; }
+ast* parse_type(token_ptr, int64_t) { return NULL; }
 
 
 /* a grammar rule with several alternatives such as
@@ -48,7 +49,7 @@ ast* parse_global_scope(token_ptr, int64_t) { return NULL; }
 #define RULE_LEN 10
 ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
 	{ parse_global_scope,        parse_function_definition,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
-	{ parse_type,                parse_keyword_type,                                                               grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_type,                parse_type_identifier,                                                            grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_return_statement,    parse_keyword_return, parse_number, parse_semicolon,                              grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_function_prototype,  parse_type, parse_identifier, parse_open_paren, parse_close_paren,                grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
 	{ parse_function_definition, parse_function_prototype, parse_open_curly, parse_local_scope, parse_close_curly, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
@@ -405,37 +406,51 @@ ast* parse_semicolon(token_ptr tokens, int64_t index) {
 /* 	return statement_node; */
 /* } */
 
-ast* parse_type(token_ptr tokens, int64_t index) {
+ast* parse_type_identifier(token_ptr tokens, int64_t index) {
 	if(index >= tokens.len) {
 		return NULL;
 	}
-	if(!(tokens.ptr[index].token_kind == KEYWORD_INT || tokens.ptr[index].token_kind == KEYWORD_FLOAT)) {
-		// TODO: Somehow make this condition use a table or something
-		// which contains all types known in a scope.
+	if(!token_is_id_or_type(tokens.ptr[index])) {
 		return NULL;
 	}
-	ast* keyword_int_node = init_ast_token_node(tokens.ptr[index]);
-	if(keyword_int_node == NULL) {
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
 		return NULL;
 	}
-	ast* type_node = init_ast_syntax_node(
-		TYPE,
-		keyword_int_node->node.lex_token.first_char_index,
-		keyword_int_node->node.lex_token.last_char_index
-	);
-	if(type_node == NULL) {
-		free_ast(keyword_int_node);
-		return NULL;
-	}
-	type_node->node.syntax.children = malloc(sizeof(*type_node->node.syntax.children));
-	if(type_node->node.syntax.children == NULL) {
-		free_ast(keyword_int_node);
-		free_ast(type_node);
-		log_error("Failed to allocate memory for abstract syntax tree");
-		return NULL;
-	}
-	type_node->node.syntax.children_count = 1;
-	type_node->node.syntax.children[0] = keyword_int_node;
-	return type_node;
+	return node;
 }
+
+/* ast* parse_type(token_ptr tokens, int64_t index) { */
+/* 	if(index >= tokens.len) { */
+/* 		return NULL; */
+/* 	} */
+/* 	if(!(tokens.ptr[index].token_kind == KEYWORD_INT || tokens.ptr[index].token_kind == KEYWORD_FLOAT)) { */
+/* 		// TODO: Somehow make this condition use a table or something */
+/* 		// which contains all types known in a scope. */
+/* 		return NULL; */
+/* 	} */
+/* 	ast* keyword_int_node = init_ast_token_node(tokens.ptr[index]); */
+/* 	if(keyword_int_node == NULL) { */
+/* 		return NULL; */
+/* 	} */
+/* 	ast* type_node = init_ast_syntax_node( */
+/* 		TYPE, */
+/* 		keyword_int_node->node.lex_token.first_char_index, */
+/* 		keyword_int_node->node.lex_token.last_char_index */
+/* 	); */
+/* 	if(type_node == NULL) { */
+/* 		free_ast(keyword_int_node); */
+/* 		return NULL; */
+/* 	} */
+/* 	type_node->node.syntax.children = malloc(sizeof(*type_node->node.syntax.children)); */
+/* 	if(type_node->node.syntax.children == NULL) { */
+/* 		free_ast(keyword_int_node); */
+/* 		free_ast(type_node); */
+/* 		log_error("Failed to allocate memory for abstract syntax tree"); */
+/* 		return NULL; */
+/* 	} */
+/* 	type_node->node.syntax.children_count = 1; */
+/* 	type_node->node.syntax.children[0] = keyword_int_node; */
+/* 	return type_node; */
+/* } */
 

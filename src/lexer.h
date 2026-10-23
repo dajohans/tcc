@@ -54,5 +54,6 @@ token tokenize_semicolon(int64_t index, string_view sv);
 token tokenize_number(int64_t index, string_view sv);
 token tokenize_keyword(int64_t index, string_view sv);
 token tokenize_id(int64_t index, string_view sv);
+bool token_is_id_or_type(token tok);
 
 #endif // LEXER_H

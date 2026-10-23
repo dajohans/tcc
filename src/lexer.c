@@ -297,3 +297,12 @@ token tokenize_id(int64_t index, string_view sv) {
 		.last_char_index = index + len - 1
 	};
 }
+
+bool token_is_id_or_type(token tok) {
+	if(tok.token_kind != IDENTIFIER &&
+	tok.token_kind != KEYWORD_INT &&
+	tok.token_kind != KEYWORD_FLOAT) {
+		return false;
+	}
+	return true;
+}

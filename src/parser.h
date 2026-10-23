@@ -19,6 +19,6 @@ ast* parse_keyword_type(token_ptr tokens, int64_t index);
 ast* parse_keyword_return(token_ptr tokens, int64_t index);
 ast* parse_number(token_ptr tokens, int64_t index);
 ast* parse_semicolon(token_ptr tokens, int64_t index);
-ast* parse_type(token_ptr tokens, int64_t index);
+ast* parse_type_identifier(token_ptr tokens, int64_t index);
 
 #endif // PARSER_H

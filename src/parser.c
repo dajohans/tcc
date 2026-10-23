@@ -454,3 +454,61 @@ ast* parse_type_identifier(token_ptr tokens, int64_t index) {
 /* 	return type_node; */
 /* } */
 
+bool is_type_in_table(type_table types, ast* type_node) {
+	if(is_type(type_node) || types.table == NULL) {
+		return false;
+	}
+	bool found_type = false;
+	for(int64_t i = 0; i < types.table_len; i++) {
+		if(sv_cmp(type_node->node.lex_token.lexeme, types.table[i].name)) {
+			found_type = true;
+			break;
+		}
+	}
+	return found_type;
+}
+
+bool type_exists(ast* type_node) {
+	if(is_type(type_node)) {
+		return false;
+	}
+	bool found_type = false;
+	for(ast* parent = get_parent(type_node); parent != NULL; parent = get_parent(parent)) {
+		if(parent->kind != SCOPE) {
+			continue;
+		}
+		if(is_type_in_table(parent->node.scope.types, type_node)) {
+			found_type = true;
+			break;
+		}
+	}
+	return found_type;
+}
+
+bool parse_type_fixing(ast* syntax_tree) {
+	// This function should go through the ast and do two things:
+	//   1. Add any typedefs and structs to the type table 
+	//   2. Check that any ast node marked as type has a lexeme which
+	//      exists in an available type table.
+	if(syntax_tree == NULL) {
+		return NULL;
+	}
+	bool all_types_valid = true;
+	for(int64_t i = 0; i < ast_child_count(syntax_tree); i++) {
+		ast* child = get_child(syntax_tree, i);
+		if(!is_type(child)) {
+			if(child->kind != TERMINAL) {
+				if(!parse_type_fixing(child)) {
+					all_types_valid = false;
+					break;
+				}
+			}
+		} else {
+			if(!type_exists(child)) {
+				all_types_valid = false;
+				break;
+			}
+		}
+	}
+	return all_types_valid;
+}

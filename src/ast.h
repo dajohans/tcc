@@ -81,6 +81,7 @@ ast* init_ast_syntax_node(syntax_kind kind, int64_t first, int64_t last);
 ast* init_ast_token_node(token lexical_token);
 ast* set_syntax_node(ast** nodes, int64_t num_nodes, syntax_kind kind);
 ast* get_child(ast* node, int64_t index);
+ast* get_parent(ast* node);
 bool is_global_scope(ast* node);
 bool is_function_definition(ast* node);
 bool is_function_prototype(ast* node);

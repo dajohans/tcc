@@ -112,6 +112,9 @@ int main() {
 	/* type_table tbl = create_global_type_table(); */
 	print_type_table(syntax_tree->node.scope.types);
 	/* free_type_table(&tbl); */
+	if(!parse_type_fixing(syntax_tree)) {
+		log_error("Invalid type");
+	}
 
 	if(!analyze_semantics(syntax_tree)) {
 		log_error("Type mismatch - Return value type and function return type differ");

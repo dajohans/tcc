@@ -345,6 +345,13 @@ ast* get_child(ast* node, int64_t index) {
 	return child;
 }
 
+ast* get_parent(ast* node) {
+	if(node == NULL) {
+		return NULL;
+	}
+	return node->parent;
+}
+
 bool is_global_scope(ast* node) {
 	if(node == NULL) {
 		return false;

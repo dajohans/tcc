@@ -23,6 +23,8 @@ ast* parse_type_identifier(token_ptr tokens, int64_t index);
 bool is_type_in_table(type_table types, ast* type_node);
 bool type_exists(ast* type_node);
 bool parser_validate_types(ast* syntax_tree);
+bool determine_expression_type(ast* expr);
+bool parser_assign_expression_types(ast* syntax_tree);
 
 #endif // PARSER_H
 

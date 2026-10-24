@@ -49,5 +49,6 @@ bool sv_trim(string_view* sv);
 string_view sv_trim_left(string_view* sv);
 string_view sv_trim_right(string_view* sv);
 string stringify_c_str(char *str);
+bool sv_is_int_literal(string_view sv);
 
 #endif // STRING_H

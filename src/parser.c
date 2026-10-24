@@ -434,3 +434,56 @@ bool parser_validate_types(ast* syntax_tree) {
 	}
 	return all_types_valid;
 }
+
+bool determine_expression_type(ast* expr) {
+	if(expr == NULL) {
+		return false;
+	}
+	ast* child = get_child(expr, 0);
+	bool determined_type = false;
+	if(is_int(child)) {
+		char* type_str = "int";
+		for(ast* parent = get_parent(expr); parent != NULL; parent = get_parent(parent)) {
+			if(!is_scope(parent)) {
+				continue;
+			}
+			type_table types = parent->node.non_terminal.extra.type_table;
+			
+			for(int64_t i = 0; i < types.table_len; i++) {
+				string_view type_sv = set_sv_ptr(type_str, c_str_len(type_str));
+				if(sv_cmp(types.table[i].name, type_sv)) {
+					expr->node.non_terminal.extra.type = types.table[i];
+					determined_type = true;
+					break;
+				}
+			}
+			if(determined_type) {
+				break;
+			}
+		}
+	}
+	return determined_type;
+}
+
+bool parser_assign_expression_types(ast* syntax_tree) {
+	if(syntax_tree == NULL) {
+		return false;
+	}
+	if(!ast_can_have_children(syntax_tree)) {
+		return true;
+	}
+	bool all_expression_types_valid = true;
+	for(int64_t i = 0; i < ast_child_count(syntax_tree); i++) {
+		ast* child = get_child(syntax_tree, i);
+		if(!is_expression(child)) {
+			if(!parser_assign_expression_types(child)) {
+				all_expression_types_valid = false;
+			}
+		} else {
+			if(!determine_expression_type(child)) {
+				all_expression_types_valid = false;
+			}
+		}
+	}
+	return all_expression_types_valid;
+}

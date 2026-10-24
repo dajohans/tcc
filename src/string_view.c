@@ -327,3 +327,16 @@ string stringify_c_str(char *str) {
 	return tmp;
 }
 
+bool sv_is_int_literal(string_view sv) {
+	// TODO: Add unit testing
+	if(sv.len <= 0) {
+		return false;
+	}
+	for(int64_t i = 0; i < sv.len; i++) {
+		if(!isdigit(sv.ptr[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+

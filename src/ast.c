@@ -318,6 +318,35 @@ bool is_scope(ast* node) {
 	return is_global_scope(node) || is_local_scope(node);
 }
 
+bool is_expression(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind != NON_TERMINAL) {
+		return false;
+	}
+	if(node->node.non_terminal.kind != EXPRESSION) {
+		return false;
+	}
+	return true;
+}
+
+bool is_int(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind != TERMINAL) {
+		return false;
+	}
+	if(node->node.terminal.token_kind != NUMBER) {
+		return false;
+	}
+	if(!sv_is_int_literal(node->node.terminal.lexeme)) {
+		return false;
+	}
+	return true;
+}
+
 bool is_function_definition(ast* node) {
 	if(node == NULL) {
 		return false;

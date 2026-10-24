@@ -1,15 +1,16 @@
 
 # Torsö C Compiler (TCC)
 
-This is just my attempt at getting back into programming, by implementing a project I have long wanted to do.
-The project name comes from [Torsö](https://en.wikipedia.org/wiki/Torsö) which is an island in Sweden.
+In case anybody encounters this repo: This is just my attempt at getting back into programming.
+I have long wanted to implement a compiler, so I'm implementing a compiler.
+The project name is based on a Swedish island close to my heart: [Torsö](https://en.wikipedia.org/wiki/Torsö).
 
 ## Goals
 
 The goals are:
 - compile C to assembly,
 - self-hosting: the compiler can compile itself,
-- implement everything from scratch: no use compiler tools like Yacc or LLVM.
+- implement everything from scratch: no use of compiler tools like Yacc or LLVM.
 
 The basic steps that need to be implemented:
 - preprocessor

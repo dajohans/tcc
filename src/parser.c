@@ -441,6 +441,10 @@ bool determine_expression_type(ast* expr) {
 	}
 	ast* child = get_child(expr, 0);
 	bool determined_type = false;
+	type_info expr_type = (type_info) {
+		.id = -1,
+		.name = set_sv_ptr("invalid type", c_str_len("invalid type"))
+	};
 	if(is_int(child)) {
 		char* type_str = "int";
 		for(ast* parent = get_parent(expr); parent != NULL; parent = get_parent(parent)) {
@@ -452,7 +456,7 @@ bool determine_expression_type(ast* expr) {
 			for(int64_t i = 0; i < types.table_len; i++) {
 				string_view type_sv = set_sv_ptr(type_str, c_str_len(type_str));
 				if(sv_cmp(types.table[i].name, type_sv)) {
-					expr->node.non_terminal.extra.type = types.table[i];
+					expr_type = types.table[i];
 					determined_type = true;
 					break;
 				}
@@ -462,6 +466,7 @@ bool determine_expression_type(ast* expr) {
 			}
 		}
 	}
+	expr->node.non_terminal.extra.type = expr_type;
 	return determined_type;
 }
 

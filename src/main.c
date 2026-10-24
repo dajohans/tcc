@@ -110,7 +110,7 @@ int main() {
 	/* ast* syntax_tree = parse_function_definition(token_array, 0); */
 	/* print_ast(syntax_tree); */
 	/* type_table tbl = create_global_type_table(); */
-	print_type_table(syntax_tree->node.scope.types);
+	print_type_table(syntax_tree->node.non_terminal.extra.type_table);
 	/* free_type_table(&tbl); */
 	if(!parser_validate_types(syntax_tree)) {
 		log_error("Invalid type");

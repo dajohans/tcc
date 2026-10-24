@@ -45,7 +45,7 @@ bool return_type_check(ast* fun) {
 		.name = { .ptr = NULL, .len = -1 }
 	};
 	for(int64_t i = 0; i < ARR_LEN(type_table); i++) {
-		if(get_child(return_type_node, 0)->node.lex_token.token_kind == type_table[i].id) {
+		if(get_child(return_type_node, 0)->node.terminal.token_kind == type_table[i].id) {
 			function_return_type = type_table[i];
 		}
 	}
@@ -60,7 +60,7 @@ bool return_type_check(ast* fun) {
 		.name = { .ptr = NULL, .len = -1 }
 	};
 	// TODO: This is still hard coded for 'return 0;'
-	if(return_expression_node->node.lex_token.token_kind == NUMBER) {
+	if(return_expression_node->node.terminal.token_kind == NUMBER) {
 		return_value_type = type_table[0];
 	}
 	if(return_value_type.id == -1) {

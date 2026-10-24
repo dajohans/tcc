@@ -17,11 +17,10 @@ ast* copy_ast_node(ast* dest, ast* src) {
 	}
 	dest->kind = src->kind;
 	if(dest->kind == TERMINAL) {
-		dest->node.lex_token = src->node.lex_token;
+		dest->node.terminal.lexeme = src->node.terminal.lexeme;
+		dest->node.terminal.token_kind = src->node.terminal.token_kind;
 	} else if(dest->kind == NON_TERMINAL) {
-		dest->node.syntax = src->node.syntax;
-	} else if(dest->kind == SCOPE) {
-		dest->node.scope = src->node.scope;
+		dest->node.non_terminal = src->node.non_terminal;
 	}
 	return dest;
 }
@@ -35,9 +34,7 @@ int64_t ast_child_count(ast* node) {
 	}
 	int64_t num = -1;
 	if(node->kind == NON_TERMINAL) {
-		num = node->node.syntax.children_count;
-	} else if(node->kind == SCOPE) {
-		num = node->node.scope.children_count;
+		num = node->node.non_terminal.children_count;
 	}
 	return num;
 }
@@ -51,24 +48,9 @@ int64_t ast_child_cap(ast* node) {
 	}
 	int64_t num = -1;
 	if(node->kind == NON_TERMINAL) {
-		num = node->node.syntax.children_cap;
-	} else if(node->kind == SCOPE) {
-		num = node->node.scope.children_cap;
+		num = node->node.non_terminal.children_cap;
 	}
 	return num;
-}
-
-ast* ast_scope_insert_child(ast* tree, ast* child) {
-	if(!is_scope(tree)){
-		return NULL;
-	}
-	if(ast_child_count(tree) >= ast_child_cap(tree)) {
-		log_error("Failed to insert child - out of memory");
-		return NULL;
-	}
-	tree->node.scope.children[tree->node.scope.children_count] = child;
-	tree->node.scope.children_count++;
-	return tree;
 }
 
 ast* ast_nonterminal_insert_child(ast* tree, ast* child) {
@@ -82,8 +64,8 @@ ast* ast_nonterminal_insert_child(ast* tree, ast* child) {
 		log_error("Failed to insert child - out of memory");
 		return NULL;
 	}
-	tree->node.syntax.children[tree->node.syntax.children_count] = child;
-	tree->node.syntax.children_count++;
+	tree->node.non_terminal.children[tree->node.non_terminal.children_count] = child;
+	tree->node.non_terminal.children_count++;
 	return tree;
 }
 
@@ -94,18 +76,10 @@ ast* ast_set_child_array(ast* tree, ast** child_array, int64_t child_count, int6
 	if(!ast_can_have_children(tree)) {
 		return NULL;
 	}
-
-	if(tree->kind == NON_TERMINAL) {
-		free(tree->node.syntax.children);
-		tree->node.syntax.children = child_array;
-		tree->node.syntax.children_count = child_count;
-		tree->node.syntax.children_cap = child_cap;
-	} else if(tree->kind == SCOPE) {
-		free(tree->node.scope.children);
-		tree->node.scope.children = child_array;
-		tree->node.scope.children_count = child_count;
-		tree->node.scope.children_cap = child_cap;
-	}
+	free(tree->node.non_terminal.children);
+	tree->node.non_terminal.children = child_array;
+	tree->node.non_terminal.children_count = child_count;
+	tree->node.non_terminal.children_cap = child_cap;
 	return tree;
 }
 
@@ -113,7 +87,7 @@ bool ast_can_have_children(ast* tree) {
 	if(tree == NULL) {
 		return false;
 	}
-	if(tree->kind != NON_TERMINAL && tree->kind != SCOPE) {
+	if(tree->kind != NON_TERMINAL) {
 		return false;
 	}
 	return true;
@@ -147,11 +121,7 @@ ast* ast_set_child_count(ast* tree, int64_t count) {
 	if(!ast_can_have_children(tree)) {
 		return NULL;
 	}
-	if(tree->kind == NON_TERMINAL) {
-		tree->node.syntax.children_count = count;
-	} else if(tree->kind == SCOPE) {
-		tree->node.scope.children_count = count;
-	}
+	tree->node.non_terminal.children_count = count;
 	return tree;
 }
 
@@ -159,11 +129,7 @@ ast* ast_set_child_cap(ast* tree, int64_t cap) {
 	if(!ast_can_have_children(tree)) {
 		return NULL;
 	}
-	if(tree->kind == NON_TERMINAL) {
-		tree->node.syntax.children_cap = cap;
-	} else if(tree->kind == SCOPE) {
-		tree->node.scope.children_cap = cap;
-	}
+	tree->node.non_terminal.children_cap = cap;
 	return tree;
 }
 
@@ -171,13 +137,7 @@ ast* ast_set_last_char_index(ast* tree, int64_t index) {
 	if(tree == NULL || index <= 0) {
 		return NULL;
 	}
-	if(tree->kind == TERMINAL) {
-		tree->node.lex_token.last_char_index = index;
-	} else if (tree->kind == NON_TERMINAL) {
-		tree->node.syntax.last_char_index = index;
-	} else if (tree->kind == SCOPE) {
-		tree->node.scope.last_char_index = index ;
-	}
+	tree->last_char_index = index;
 	return tree;
 }
 
@@ -185,15 +145,7 @@ int64_t ast_get_last_char_index(ast* tree) {
 	if(tree == NULL) {
 		return -1;
 	}
-	int64_t index = -1;
-	if(tree->kind == TERMINAL) {
-		index = tree->node.lex_token.last_char_index;
-	} else if (tree->kind == NON_TERMINAL) {
-		index = tree->node.syntax.last_char_index;
-	} else if (tree->kind == SCOPE) {
-		index = tree->node.scope.last_char_index;
-	}
-	return index;
+	return tree->last_char_index;
 }
 
 bool ast_add_child(ast* tree, ast* child) {
@@ -214,18 +166,10 @@ bool ast_add_child(ast* tree, ast* child) {
 	ast_set_last_char_index(tree, ast_get_last_char_index(child));
 	child->parent = tree;
 	
-	if(tree->kind == NON_TERMINAL) {
-		ast* result = ast_nonterminal_insert_child(tree, child);
-		if(result == NULL) {
-			log_error("Failed to add child to AST non-terminal node");
-			return false;
-		}
-	} else if(tree->kind == SCOPE) {
-		ast* result = ast_scope_insert_child(tree, child);
-		if(result == NULL) {
-			log_error("Failed to add child to AST scope node");
-			return false;
-		}
+	ast* result = ast_nonterminal_insert_child(tree, child);
+	if(result == NULL) {
+		log_error("Failed to add child to AST non-terminal node");
+		return false;
 	}
 	return true;
 }
@@ -236,8 +180,8 @@ int64_t ast_num_tokens_helper(ast* syntax_tree) {
 	}
 	int64_t num = 0;
 	if(syntax_tree->kind == NON_TERMINAL) {
-		for(int64_t i = 0; i < syntax_tree->node.syntax.children_count; i++) {
-			num += ast_num_tokens_helper(syntax_tree->node.syntax.children[i]);
+		for(int64_t i = 0; i < syntax_tree->node.non_terminal.children_count; i++) {
+			num += ast_num_tokens_helper(syntax_tree->node.non_terminal.children[i]);
 		}
 	} else {
 		num += 1;
@@ -257,17 +201,14 @@ void free_ast_helper(ast* syntax_tree) {
 		return;
 	}
 	if(syntax_tree->kind == NON_TERMINAL) {
-		for(int64_t i = 0; i < syntax_tree->node.syntax.children_count; i++) {
-			free_ast_helper(syntax_tree->node.syntax.children[i]);
+		for(int64_t i = 0; i < syntax_tree->node.non_terminal.children_count; i++) {
+			free_ast_helper(syntax_tree->node.non_terminal.children[i]);
 		}
-		free(syntax_tree->node.syntax.children);
-	}
-	if(syntax_tree->kind == SCOPE) {
-		for(int64_t i = 0; i < syntax_tree->node.scope.children_count; i++) {
-			free_ast_helper(syntax_tree->node.scope.children[i]);
+		if(is_scope(syntax_tree)) {
+			free(syntax_tree->node.non_terminal.extra.type_table.table);
 		}
-		free(syntax_tree->node.scope.types.table);
-		free(syntax_tree->node.scope.children);
+		free(syntax_tree->node.non_terminal.children);
+		
 	}
 	free(syntax_tree);
 }
@@ -287,10 +228,10 @@ ast* init_ast_syntax_node(syntax_kind kind, int64_t first, int64_t last) {
 	}
 	node->kind = NON_TERMINAL;
 	node->parent = NULL;
-	node->node.syntax = (syntax_construct) {
-		.construct = kind,
-		.first_char_index = first,
-		.last_char_index = last,
+	node->first_char_index = first;
+	node->last_char_index = last;
+	node->node.non_terminal = (non_terminal_node) {
+		.kind = kind,
 		.children = NULL,
 		.children_count = -1,
 		.children_cap = -1
@@ -306,15 +247,16 @@ ast* init_ast_token_node(token lexical_token) {
 	}
 	node->kind = TERMINAL;
 	node->parent = NULL;
-	node->node.lex_token = lexical_token;
+	node->node.terminal.lexeme = lexical_token.lexeme;
+	node->node.terminal.token_kind = lexical_token.token_kind;
 	return node;
 }
 
 ast* set_syntax_node(ast** nodes, int64_t num_nodes, syntax_kind kind) {
 	ast* syntax_node = init_ast_syntax_node(
 		kind,
-		nodes[0]->node.syntax.first_char_index,
-		nodes[num_nodes - 1]->node.lex_token.last_char_index
+		nodes[0]->first_char_index,
+		nodes[num_nodes - 1]->last_char_index
 	);
 	if(syntax_node == NULL) {
 		for(int64_t i = 0; i < num_nodes; i++) {
@@ -322,8 +264,8 @@ ast* set_syntax_node(ast** nodes, int64_t num_nodes, syntax_kind kind) {
 		}
 		return NULL;
 	}
-	syntax_node->node.syntax.children = malloc(num_nodes * sizeof(*syntax_node->node.syntax.children));
-	if(syntax_node->node.syntax.children == NULL) {
+	syntax_node->node.non_terminal.children = malloc(num_nodes * sizeof(*syntax_node->node.non_terminal.children));
+	if(syntax_node->node.non_terminal.children == NULL) {
 		for(int64_t i = 0; i < num_nodes; i++) {
 			free_ast(nodes[i]);
 		}
@@ -331,9 +273,9 @@ ast* set_syntax_node(ast** nodes, int64_t num_nodes, syntax_kind kind) {
 		log_error("Failed to allocate memory for abstract syntax tree");
 		return NULL;
 	}
-	syntax_node->node.syntax.children_count = num_nodes;
+	syntax_node->node.non_terminal.children_count = num_nodes;
 	for(int64_t i = 0; i < num_nodes; i++) {
-		syntax_node->node.syntax.children[i] = nodes[i];
+		syntax_node->node.non_terminal.children[i] = nodes[i];
 	}
 	return syntax_node;
 	
@@ -343,19 +285,13 @@ ast* get_child(ast* node, int64_t index) {
 	if(node == NULL) {
 		return NULL;
 	}
-	if(node->kind == TERMINAL) {
+	if(node->kind != NON_TERMINAL) {
 		return NULL;
 	}
 	if(index < 0 || index >= ast_child_count(node)) {
 		return NULL;
 	}
-	ast* child = NULL;
-	if(node->kind == NON_TERMINAL) {
-		child = node->node.syntax.children[index];
-	} else if(node->kind == SCOPE) {
-		child = node->node.scope.children[index];
-	}
-	return child;
+	return node->node.non_terminal.children[index];
 }
 
 ast* get_parent(ast* node) {
@@ -369,10 +305,10 @@ bool is_global_scope(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind != SCOPE) {
+	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
-	if(node->node.scope.construct != GLOBAL_SCOPE) {
+	if(node->node.non_terminal.kind != GLOBAL_SCOPE) {
 		return false;
 	}
 	return true;
@@ -389,7 +325,7 @@ bool is_function_definition(ast* node) {
 	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
-	if(node->node.syntax.construct != FUNCTION_DEFINITION) {
+	if(node->node.non_terminal.kind != FUNCTION_DEFINITION) {
 		return false;
 	}
 	return true;
@@ -402,7 +338,7 @@ bool is_function_prototype(ast* node) {
 	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
-	if(node->node.syntax.construct != FUNCTION_PROTOTYPE) {
+	if(node->node.non_terminal.kind != FUNCTION_PROTOTYPE) {
 		return false;
 	}
 	return true;
@@ -415,7 +351,7 @@ bool is_type(ast* node) {
 	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
-	if(node->node.syntax.construct != TYPE) {
+	if(node->node.non_terminal.kind != TYPE) {
 		return false;
 	}
 	return true;
@@ -425,10 +361,10 @@ bool is_local_scope(ast* node) {
 	if(node == NULL) {
 		return false;
 	}
-	if(node->kind != SCOPE) {
+	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
-	if(node->node.scope.construct != LOCAL_SCOPE) {
+	if(node->node.non_terminal.kind != LOCAL_SCOPE) {
 		return false;
 	}
 	return true;
@@ -441,7 +377,7 @@ bool is_return_statement(ast* node) {
 	if(node->kind != NON_TERMINAL) {
 		return false;
 	}
-	if(node->node.syntax.construct != RETURN_STATEMENT) {
+	if(node->node.non_terminal.kind != RETURN_STATEMENT) {
 		return false;
 	}
 	return true;
@@ -547,17 +483,12 @@ void print_ast_helper(ast* syntax_tree, int64_t padding_count) {
 		printf("  ");
 	}
 	if(syntax_tree->kind == NON_TERMINAL) {
-		printf("%s\n", grammar_token_to_c_str(syntax_tree->node.syntax.construct));
-		for(int64_t i = 0; i < syntax_tree->node.syntax.children_count; i++) {
-			print_ast_helper(syntax_tree->node.syntax.children[i], padding_count + 1);
-		}
-	} else if(syntax_tree->kind == SCOPE) {
-		printf("%s\n", grammar_token_to_c_str(syntax_tree->node.scope.construct));
-		for(int64_t i = 0; i < syntax_tree->node.scope.children_count; i++) {
-			print_ast_helper(syntax_tree->node.scope.children[i], padding_count + 1);
+		printf("%s\n", grammar_token_to_c_str(syntax_tree->node.non_terminal.kind));
+		for(int64_t i = 0; i < syntax_tree->node.non_terminal.children_count; i++) {
+			print_ast_helper(syntax_tree->node.non_terminal.children[i], padding_count + 1);
 		}
 	} else {
-		printf("%s - %.*s\n", token_to_c_str(syntax_tree->node.lex_token.token_kind), SV_ARG(syntax_tree->node.lex_token.lexeme));
+		printf("%s - %.*s\n", token_to_c_str(syntax_tree->node.terminal.token_kind), SV_ARG(syntax_tree->node.terminal.lexeme));
 	}
 }
 
@@ -628,7 +559,6 @@ type_table create_global_type_table() {
 		tbl.table_len++;
 		tbl.table[i].id = tbl.table_len;
 		tbl.table[i].name = set_sv_ptr(builtin_types[i], c_str_len(builtin_types[i]));
-
 	}
 	return tbl;
 }
@@ -644,3 +574,4 @@ bool free_type_table(type_table* tbl) {
 	tbl->table_len = -1;
 	return true;
 }
+

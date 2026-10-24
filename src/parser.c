@@ -110,30 +110,28 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 		log_error("Failed to allocate memory for ast top node");
 		return NULL;
 	}
+	top_node->kind = NON_TERMINAL;
+	top_node->parent = NULL;
+	top_node->first_char_index = -1;
+	top_node->last_char_index = -1;
+	top_node->node.non_terminal = (non_terminal_node) {
+		.kind = current_rule_kind,
+		.children = NULL,
+		.children_count = 0,
+		.children_cap = 0
+	};
 	if(is_scope_rule(current_rule_kind)) {
 		type_table tbl = create_global_type_table();
 		if(tbl.table == NULL) {
 			log_error("Failed to add type table to global scope");
 			return NULL;
 		}
-		top_node->kind = SCOPE;
 		top_node->parent = NULL;
-		top_node->node.scope = (scope) {
-			.types = tbl,
-			.construct = current_rule_kind,
-			.first_char_index = -1,
-			.last_char_index = -1,
-			.children = NULL,
-			.children_count = 0,
-			.children_cap = 0
-		};
-	} else {
-		top_node->kind = NON_TERMINAL;
-		top_node->parent = NULL;
-		top_node->node.syntax = (syntax_construct) {
-			.construct = current_rule_kind,
-			.first_char_index = -1,
-			.last_char_index = -1,
+		top_node->first_char_index = -1;
+		top_node->last_char_index = -1;
+		top_node->node.non_terminal = (non_terminal_node) {
+			.kind = current_rule_kind,
+			.extra.type_table = tbl,
 			.children = NULL,
 			.children_count = 0,
 			.children_cap = 0
@@ -161,11 +159,11 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 					for(int64_t l = 0; l < i; l++) {
 						free_ast(nodes[i]);
 					}
-					if(top_node->node.syntax.children != NULL) {
-						free(top_node->node.syntax.children);
-						top_node->node.syntax.children_count = -1;
-						top_node->node.syntax.first_char_index = -1;
-						top_node->node.syntax.last_char_index = -1;
+					if(top_node->node.non_terminal.children != NULL) {
+						free(top_node->node.non_terminal.children);
+						top_node->node.non_terminal.children_count = -1;
+						top_node->first_char_index = -1;
+						top_node->last_char_index = -1;
 					}
 					break;
 				}
@@ -178,11 +176,11 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 					for(int64_t l = 0; l < i; l++) {
 						free_ast(nodes[i]);
 					}
-					if(top_node->node.syntax.children != NULL) {
-						free(top_node->node.syntax.children);
-						top_node->node.syntax.children_count = -1;
-						top_node->node.syntax.first_char_index = -1;
-						top_node->node.syntax.last_char_index = -1;
+					if(top_node->node.non_terminal.children != NULL) {
+						free(top_node->node.non_terminal.children);
+						top_node->node.non_terminal.children_count = -1;
+						top_node->first_char_index = -1;
+						top_node->last_char_index = -1;
 					}
 					break;
 				}
@@ -469,7 +467,7 @@ bool is_type_in_table(type_table types, ast* type_node) {
 	ast* type_id = get_child(type_node, 0);
 	bool found_type = false;
 	for(int64_t i = 0; i < types.table_len; i++) {
-		if(sv_cmp(type_id->node.lex_token.lexeme, types.table[i].name)) {
+		if(sv_cmp(type_id->node.terminal.lexeme, types.table[i].name)) {
 			found_type = true;
 			break;
 		}
@@ -483,10 +481,10 @@ bool type_exists(ast* type_node) {
 	}
 	bool found_type = false;
 	for(ast* parent = get_parent(type_node); parent != NULL; parent = get_parent(parent)) {
-		if(parent->kind != SCOPE) {
+		if(!is_scope(parent)) {
 			continue;
 		}
-		if(is_type_in_table(parent->node.scope.types, type_node)) {
+		if(is_type_in_table(parent->node.non_terminal.extra.type_table, type_node)) {
 			found_type = true;
 			break;
 		}
@@ -515,7 +513,7 @@ bool parser_validate_types(ast* syntax_tree) {
 			}
 		} else {
 			if(!type_exists(child)) {
-				child->node.syntax.construct = INVALID_TYPE;
+				child->node.non_terminal.kind = INVALID_TYPE;
 				all_types_valid = false;
 			}
 		}

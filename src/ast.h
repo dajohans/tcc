@@ -19,19 +19,8 @@ typedef enum {
 
 typedef enum {
 	TERMINAL, // A lexical token
-	NON_TERMINAL, // Left-hand side in a grammar rule
-	SCOPE
+	NON_TERMINAL // Left-hand side in a grammar rule
 } ast_kind;
-
-typedef struct {
-	syntax_kind construct;
-	int64_t first_char_index;
-	int64_t last_char_index;
-	
-	struct abstract_syntax_tree** children;
-	int64_t children_count;
-	int64_t children_cap;
-} syntax_construct;
 
 typedef struct type_info {
 	int64_t id;
@@ -46,24 +35,35 @@ typedef struct type_table {
 } type_table;
 
 typedef struct {
-	type_table types;
-	syntax_kind construct;
-	int64_t first_char_index;
-	int64_t last_char_index;
+	syntax_kind kind;
+	union {
+		type_table type_table; // For expressions
+		type_info type; // For scopes
+	} extra;
 	
 	struct abstract_syntax_tree** children;
 	int64_t children_count;
 	int64_t children_cap;
-} scope;
+} non_terminal_node;
+
+typedef struct terminal_node {
+	string_view lexeme;
+	int32_t token_kind;
+} terminal_node;
 
 typedef struct abstract_syntax_tree {
 	ast_kind kind;
 	struct abstract_syntax_tree* parent;
 	union {
-		token lex_token;
-		syntax_construct syntax;
-		scope scope;
+		terminal_node terminal;
+		non_terminal_node non_terminal;
 	} node;
+	int64_t first_char_index;
+	int64_t last_char_index;
+	// If char* str contains the source code file, then
+	// str[first_char_index] is the first character of the source text
+	// representation of this AST node and str[last_char_index] is the
+	// last character.
 } ast;
 
 int64_t ast_child_count(ast* node);

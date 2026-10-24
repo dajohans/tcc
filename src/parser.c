@@ -32,6 +32,7 @@ ast* parse_function_definition(token_ptr, int64_t) { return NULL; }
 ast* parse_local_scope(token_ptr, int64_t) { return NULL; }
 ast* parse_global_scope(token_ptr, int64_t) { return NULL; }
 ast* parse_type(token_ptr, int64_t) { return NULL; }
+ast* parse_expression(token_ptr, int64_t) { return NULL; }
 
 
 /* a grammar rule with several alternatives such as
@@ -50,7 +51,8 @@ ast* parse_type(token_ptr, int64_t) { return NULL; }
 ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
 	{ parse_global_scope,        parse_function_definition,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_type,                parse_type_identifier,                                                            grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
-	{ parse_return_statement,    parse_keyword_return, parse_number, parse_semicolon,                              grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_expression,          parse_number,                                                                     grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_return_statement,    parse_keyword_return, parse_expression, parse_semicolon,                          grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_function_prototype,  parse_type, parse_identifier, parse_open_paren, parse_close_paren,                grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
 	{ parse_function_definition, parse_function_prototype, parse_open_curly, parse_local_scope, parse_close_curly, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
 	{ parse_local_scope,         parse_return_statement,                                                           grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  }
@@ -59,6 +61,7 @@ ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
 syntax_kind rule_kind[] = {
 	GLOBAL_SCOPE,
 	TYPE,
+	EXPRESSION,
 	RETURN_STATEMENT,
 	FUNCTION_PROTOTYPE,
 	FUNCTION_DEFINITION,

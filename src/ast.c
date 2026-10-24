@@ -532,6 +532,9 @@ char* grammar_token_to_c_str(int32_t token) {
 		case FUNCTION_DEFINITION:
 			str = "FUNCTION_DEFINITION";
 			break;
+		case EXPRESSION:
+			str = "EXPRESSION";
+			break;
 		case INVALID_TYPE:
 			str = "INVALID_TYPE";
 			break;

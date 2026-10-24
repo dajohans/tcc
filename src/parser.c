@@ -496,6 +496,7 @@ bool parser_validate_types(ast* syntax_tree) {
 	//   1. Add any typedefs and structs to the type table 
 	//   2. Check that any ast node marked as type has a lexeme which
 	//      exists in an available type table.
+	// TODO: Still need to implement point 1 above.
 	if(syntax_tree == NULL) {
 		return false;
 	}

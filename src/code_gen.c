@@ -53,7 +53,7 @@ string* ast_to_assembly(ast* syntax_tree) {
 	// needs to change
 	impl_handling2 = str_append_sv(
 		make_string("mov rax, "),
-		return_statement_expression(function_return_statement(fun))->node.lex_token.lexeme
+		get_child(return_statement_expression(function_return_statement(fun)), 0)->node.lex_token.lexeme
 	);
 	impl_handling2 = str_append_c_str(
 		impl_handling2,

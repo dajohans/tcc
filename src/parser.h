@@ -22,7 +22,7 @@ ast* parse_semicolon(token_ptr tokens, int64_t index);
 ast* parse_type_identifier(token_ptr tokens, int64_t index);
 bool is_type_in_table(type_table types, ast* type_node);
 bool type_exists(ast* type_node);
-bool parse_type_fixing(ast* syntax_tree);
+bool parser_validate_types(ast* syntax_tree);
 
 #endif // PARSER_H
 

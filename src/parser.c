@@ -491,7 +491,7 @@ bool type_exists(ast* type_node) {
 	return found_type;
 }
 
-bool parse_type_fixing(ast* syntax_tree) {
+bool parser_validate_types(ast* syntax_tree) {
 	// This function should go through the ast and do two things:
 	//   1. Add any typedefs and structs to the type table 
 	//   2. Check that any ast node marked as type has a lexeme which
@@ -499,20 +499,20 @@ bool parse_type_fixing(ast* syntax_tree) {
 	if(syntax_tree == NULL) {
 		return false;
 	}
+	if(!ast_can_have_children(syntax_tree)) {
+		return true;
+	}
 	bool all_types_valid = true;
 	for(int64_t i = 0; i < ast_child_count(syntax_tree); i++) {
 		ast* child = get_child(syntax_tree, i);
 		if(!is_type(child)) {
-			if(ast_can_have_children(child)) {
-				if(!parse_type_fixing(child)) {
-					all_types_valid = false;
-					break;
-				}
+			if(!parser_validate_types(child)) {
+				all_types_valid = false;
 			}
 		} else {
 			if(!type_exists(child)) {
+				child->node.syntax.construct = INVALID_TYPE;
 				all_types_valid = false;
-				break;
 			}
 		}
 	}

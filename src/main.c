@@ -108,13 +108,14 @@ int main() {
 	ast* syntax_tree = parse_top_level(token_array, 0);
 	
 	/* ast* syntax_tree = parse_function_definition(token_array, 0); */
-	print_ast(syntax_tree);
+	/* print_ast(syntax_tree); */
 	/* type_table tbl = create_global_type_table(); */
 	print_type_table(syntax_tree->node.scope.types);
 	/* free_type_table(&tbl); */
-	if(!parse_type_fixing(syntax_tree)) {
+	if(!parser_validate_types(syntax_tree)) {
 		log_error("Invalid type");
 	}
+	print_ast(syntax_tree);
 
 	if(!analyze_semantics(syntax_tree)) {
 		log_error("Type mismatch - Return value type and function return type differ");

@@ -6,7 +6,8 @@
 #include "lexer.h"
 
 typedef enum {
-	AST_ERROR = -2,
+	INVALID_TYPE = -2,
+	AST_ERROR = -1,
 	TYPE = 100,
 	RETURN_STATEMENT,
 	LOCAL_SCOPE,

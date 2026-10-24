@@ -604,3 +604,22 @@ bool free_type_table(type_table* tbl) {
 	return true;
 }
 
+void print_expression_helper(ast* syntax_tree) {
+	if(syntax_tree->kind != NON_TERMINAL) {
+		return;
+	}
+	if(is_expression(syntax_tree)) {
+		printf("Expr type: %.*s\n", SV_ARG(syntax_tree->node.non_terminal.extra.type.name));
+	}
+	for(int64_t i = 0; i < syntax_tree->node.non_terminal.children_count; i++) {
+		print_expression_helper(syntax_tree->node.non_terminal.children[i]);
+	}
+}
+
+void print_expression_types(ast* syntax_tree) {
+	if(syntax_tree == NULL) {
+		return;
+	}
+	print_expression_helper(syntax_tree);
+}
+

@@ -45,11 +45,13 @@ int main() {
 	if(!parser_validate_types(syntax_tree)) {
 		log_error("Invalid type");
 	}
-	print_ast(syntax_tree);
+	/* print_ast(syntax_tree); */
 
 	if(!parser_assign_expression_types(syntax_tree)) {
 		log_error("Failed to assign type to expression");
 	}
+	
+	print_expression_types(syntax_tree);
 	
 	if(!analyze_semantics(syntax_tree)) {
 		log_error("Type mismatch - Return value type and function return type differ");

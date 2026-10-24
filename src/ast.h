@@ -108,5 +108,7 @@ void print_type_table(type_table tbl);
 bool realloc_type_table(type_table* tbl);
 type_table create_global_type_table();
 bool free_type_table(type_table* tbl);
+void print_expression_helper(ast* syntax_tree);
+void print_expression_types(ast* syntax_tree);
 
 #endif // AST_H

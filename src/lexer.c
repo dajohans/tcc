@@ -5,6 +5,41 @@
 #include "lexer.h"
 #include "pointer.h"
 
+/* LEXER
+ * Translates strings into integer tokes. Each lexeme is probably one
+ * of the following:
+ *   word
+ *   number
+ *   delimiter
+ *   string
+ *   comment
+ *   header name
+ * A word is probably given by the regex
+ *     [_a-zA-z][_a-zA-Z0-9]*
+ * and number is probably given by the regex
+ *     [0-9]+[.eE]?[0-9]
+ * but there can also be numbers like .5f which need to be added into
+ * this regex. The delimiters include the following:
+ *     ( ) { } [ ] + - * % / & | < > = >= <= ; ! ->
+ * Note that the delimiters should probably be splir into tokes
+ * classes like MATH_OP, PAREN, CURLY_BRACE and so on. Comment is
+ * something like
+ *     //[*]*
+ *     / *[*]**/
+/* where [*] means any symbol, and the space between / and * should be
+ * removed. But removing it leads to compiler warnings... * Lastly,
+ * header name is something like
+ *     <[-_0-9a-zA-Z]+>
+ * The priority should probably be to check them in this order:
+ *    1. comment
+ *    2. string
+ *    3. header name
+ *    4. number
+ *    5. delimiter
+ *    6. words
+ * Start with word, number, delimiter
+ */
+
 typedef struct keyword_token {
 	string lexeme;
 	int32_t token_kind;

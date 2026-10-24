@@ -357,58 +357,6 @@ ast* parse_semicolon(token_ptr tokens, int64_t index) {
 	return node;
 }
 
-/* ast* parse_statement(token_ptr tokens, int64_t index) { */
-/* 	const int64_t rule_len = 3; */
-/* 	if(index + rule_len >= tokens.len) { */
-/* 		return NULL; */
-/* 	} */
-/* 	if(tokens.ptr[index].token_kind != KEYWORD_RETURN || */
-/* 	tokens.ptr[index + 1].token_kind != NUMBER || */
-/* 	tokens.ptr[index + 2].token_kind != SEMICOLON) { */
-/* 		return NULL; */
-/* 	} */
-/* 	ast* keyword_return_node = init_ast_token_node(tokens.ptr[index]); */
-/* 	if(keyword_return_node == NULL) { */
-/* 		return NULL; */
-/* 	} */
-/* 	ast* number_node = init_ast_token_node(tokens.ptr[index + 1]); */
-/* 	if(number_node == NULL) { */
-/* 		free_ast(keyword_return_node); */
-/* 		return NULL; */
-/* 	} */
-/* 	ast* semicolon_node = init_ast_token_node(tokens.ptr[index + 2]); */
-/* 	if(semicolon_node == NULL) { */
-/* 		free_ast(keyword_return_node); */
-/* 		free_ast(number_node); */
-/* 		return NULL; */
-/* 	} */
-/* 	ast* statement_node = init_ast_syntax_node( */
-/* 		STATEMENT, */
-/* 		tokens.ptr[index].first_char_index, */
-/* 		tokens.ptr[index + 2].last_char_index */
-/* 	); */
-/* 	if(statement_node == NULL) { */
-/* 		free_ast(keyword_return_node); */
-/* 		free_ast(number_node); */
-/* 		free_ast(semicolon_node); */
-/* 		return NULL; */
-/* 	} */
-/* 	statement_node->children = malloc(rule_len * sizeof(*statement_node->children)); */
-/* 	if(statement_node->children == NULL) { */
-/* 		free_ast(keyword_return_node); */
-/* 		free_ast(number_node); */
-/* 		free_ast(semicolon_node); */
-/* 		free_ast(statement_node); */
-/* 		log_error("Failed to allocate memory for abstract syntax tree"); */
-/* 		return NULL; */
-/* 	} */
-/* 	statement_node->children_count = rule_len; */
-/* 	statement_node->children[0] = keyword_return_node; */
-/* 	statement_node->children[1] = number_node; */
-/* 	statement_node->children[2] = semicolon_node; */
-/* 	return statement_node; */
-/* } */
-
 ast* parse_type_identifier(token_ptr tokens, int64_t index) {
 	if(index >= tokens.len) {
 		return NULL;
@@ -422,40 +370,6 @@ ast* parse_type_identifier(token_ptr tokens, int64_t index) {
 	}
 	return node;
 }
-
-/* ast* parse_type(token_ptr tokens, int64_t index) { */
-/* 	if(index >= tokens.len) { */
-/* 		return NULL; */
-/* 	} */
-/* 	if(!(tokens.ptr[index].token_kind == KEYWORD_INT || tokens.ptr[index].token_kind == KEYWORD_FLOAT)) { */
-/* 		// TODO: Somehow make this condition use a table or something */
-/* 		// which contains all types known in a scope. */
-/* 		return NULL; */
-/* 	} */
-/* 	ast* keyword_int_node = init_ast_token_node(tokens.ptr[index]); */
-/* 	if(keyword_int_node == NULL) { */
-/* 		return NULL; */
-/* 	} */
-/* 	ast* type_node = init_ast_syntax_node( */
-/* 		TYPE, */
-/* 		keyword_int_node->node.lex_token.first_char_index, */
-/* 		keyword_int_node->node.lex_token.last_char_index */
-/* 	); */
-/* 	if(type_node == NULL) { */
-/* 		free_ast(keyword_int_node); */
-/* 		return NULL; */
-/* 	} */
-/* 	type_node->node.syntax.children = malloc(sizeof(*type_node->node.syntax.children)); */
-/* 	if(type_node->node.syntax.children == NULL) { */
-/* 		free_ast(keyword_int_node); */
-/* 		free_ast(type_node); */
-/* 		log_error("Failed to allocate memory for abstract syntax tree"); */
-/* 		return NULL; */
-/* 	} */
-/* 	type_node->node.syntax.children_count = 1; */
-/* 	type_node->node.syntax.children[0] = keyword_int_node; */
-/* 	return type_node; */
-/* } */
 
 bool is_type_in_table(type_table types, ast* type_node) {
 	if(!is_type(type_node)) {

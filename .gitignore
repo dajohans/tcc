@@ -1,1 +1,6 @@
 out/
+a.o
+a.out
+a.s
+assembly_test/a.out
+assembly_test/assembly.o

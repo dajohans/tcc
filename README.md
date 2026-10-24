@@ -29,14 +29,15 @@ Linking as well as compilation of assembly to binary are out of scope.
 
 ## Current goal
 
-- [ ] Improve the parser and lexer designs
-    - [x] Specify grammar rules as static data, rather than each grammar rule being implemented as a separate C function
-    - [x] Add functions for traversing, accessing data from, and modifying the token list and AST
-    - [ ] Rethink the type situation. Types can be defined at arbitrary points in the source code, so the type cannot strictly speaking be determined by a static context free grammar. Types need to be checked against a dynamic type table.    
-    - [ ] Think about the keywork situation. Should each keyword be its own token or should there only be one keyword token? 
+- [ ] Adapt type checking in semantic analysis to the new type table
 
 ## Completed goals
 
+- [x] Improve the parser and lexer designs
+    - [x] Specify grammar rules as static data, rather than each grammar rule being implemented as a separate C function
+    - [x] Add functions for traversing, accessing data from, and modifying the token list and AST
+    - [x] Rethink the type situation. New approach: Each AST node for a scope now contains a type table. Parsing is done in two phases. First phase is a pure context free grammar and ignores type tables. The second phase updates type tables. Refactored AST data structure to fit this model better.    
+    - [x] Think about the keywork situation. Conclusion: Each keyword should probably keep having its own token. Having one keyword token for all builtin types could make some parser implementations simpler, but with the current type table approach it makes no difference. Separating the keyword 'if' from keyword 'for' makes sense in the parser.
 - [x] Add initial unit testing on string.c
 - [x] Adapt the minimal viable product implementation to not be hard coded for the example C program.
     - [x] Enable substring handling by something like C++'s string_view

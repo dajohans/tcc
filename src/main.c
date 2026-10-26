@@ -16,6 +16,7 @@ int main() {
 	/* string file_name = make_string("example_code/failing/minimal_misplaced_identifier.c"); */
 	/* string file_name = make_string("example_code/failing/minimal_misplaced_char.c"); */
 	/* string file_name = make_string("example_code/failing/minimal_bad_type.c"); */
+	/* string file_name = make_string("example_code/failing/minimal_wrong_type.c"); */
 	string file_name = make_string("example_code/working/minimal.c");
 	if(file_name.len == 0) {
 		return 1;
@@ -45,7 +46,7 @@ int main() {
 	if(!parser_validate_types(syntax_tree)) {
 		log_error("Invalid type");
 	}
-	/* print_ast(syntax_tree); */
+	print_ast(syntax_tree);
 
 	if(!parser_assign_expression_types(syntax_tree)) {
 		log_error("Failed to assign type to expression");

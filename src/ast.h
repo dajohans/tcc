@@ -37,8 +37,8 @@ typedef struct type_table {
 typedef struct {
 	syntax_kind kind;
 	union {
-		type_table type_table; // For expressions
-		type_info type; // For scopes
+		type_table type_table; // For scopes
+		type_info type; // For expressions and types
 	} extra;
 	
 	struct abstract_syntax_tree** children;

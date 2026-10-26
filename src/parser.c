@@ -406,6 +406,82 @@ bool type_exists(ast* type_node) {
 	return found_type;
 }
 
+type_info find_type_in_table(type_table types, ast* type_node) {
+	if(!is_type(type_node)) {
+		return (type_info) {
+			.id = -1,
+			.name = (string_view) {
+				.ptr = NULL,
+				.len = -1
+			}
+		};
+	}
+	if(types.table == NULL) {
+		return (type_info) {
+			.id = -1,
+			.name = (string_view) {
+				.ptr = NULL,
+				.len = -1
+			}
+		};
+	}
+	ast* type_id = get_child(type_node, 0);
+	type_info found_type = (type_info) {
+		.id = -1,
+		.name = (string_view) {
+			.ptr = NULL,
+			.len = -1
+		}
+	};
+	for(int64_t i = 0; i < types.table_len; i++) {
+		if(sv_cmp(type_id->node.terminal.lexeme, types.table[i].name)) {
+			found_type = types.table[i];
+			break;
+		}
+	}
+	return found_type;
+}
+
+type_info find_type(ast* type_node) {
+	if(!is_type(type_node)) {
+		return (type_info) {
+			.id = -1,
+			.name = (string_view) {
+				.ptr = NULL,
+				.len = -1
+			}
+		};
+	}
+	type_info found_type = (type_info) {
+		.id = -1,
+		.name = (string_view) {
+			.ptr = NULL,
+			.len = -1
+		}
+	};
+	type_info tmp_type = (type_info) {
+		.id = -1,
+		.name = (string_view) {
+			.ptr = NULL,
+			.len = -1
+		}
+	};
+	for(ast* parent = get_parent(type_node); parent != NULL; parent = get_parent(parent)) {
+		if(!is_scope(parent)) {
+			continue;
+		}
+		tmp_type = find_type_in_table(parent->node.non_terminal.extra.type_table, type_node);
+		if(tmp_type.id != -1) {
+			// TODO: Valid type IDs are >= 1. Define constant
+			// somewhere to avoid magic constant, and maybe implement
+			// a function which checks if the type is valid.
+			found_type = tmp_type;
+			break;
+		}
+	}
+	return found_type;
+}
+
 bool parser_validate_types(ast* syntax_tree) {
 	// This function should go through the ast and do two things:
 	//   1. Add any typedefs and structs to the type table 
@@ -419,18 +495,35 @@ bool parser_validate_types(ast* syntax_tree) {
 		return true;
 	}
 	bool all_types_valid = true;
+	type_info tmp_type = (type_info) {
+		.id = -1,
+		.name = (string_view) {
+			.ptr = NULL,
+			.len = -1
+		}
+	};
 	for(int64_t i = 0; i < ast_child_count(syntax_tree); i++) {
 		ast* child = get_child(syntax_tree, i);
 		if(!is_type(child)) {
 			if(!parser_validate_types(child)) {
 				all_types_valid = false;
 			}
-		} else {
-			if(!type_exists(child)) {
-				child->node.non_terminal.kind = INVALID_TYPE;
-				all_types_valid = false;
-			}
+			continue;
 		}
+		tmp_type = find_type(child);
+		if(tmp_type.id == -1) {
+			child->node.non_terminal.kind = INVALID_TYPE;
+			child->node.non_terminal.extra.type = (type_info) {
+				.id = -1,
+				.name = (string_view) {
+					.ptr = NULL,
+					.len = -1
+				}
+			};
+			all_types_valid = false;
+			continue;
+		}
+		child->node.non_terminal.extra.type = tmp_type;
 	}
 	return all_types_valid;
 }

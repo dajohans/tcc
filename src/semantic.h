@@ -5,6 +5,7 @@
 #include "parser.h"
 
 bool analyze_semantics(ast* syntax_tree);
+bool main_function_exists(ast* syntax_tree);
 bool return_type_check(ast* syntax_tree);
 
 #endif // SEMANTIC_H

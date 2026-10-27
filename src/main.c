@@ -55,7 +55,8 @@ int main() {
 	print_expression_types(syntax_tree);
 	
 	if(!analyze_semantics(syntax_tree)) {
-		log_error("Type mismatch - Return value type and function return type differ");
+		/* log_error("Type mismatch - Return value type and function return type differ"); */
+		log_error("Failed semantic analysis");
 	}
 	code_gen(syntax_tree);
 	

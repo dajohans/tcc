@@ -10,10 +10,33 @@ bool analyze_semantics(ast* syntax_tree) {
 	if(!is_global_scope(syntax_tree)) {
 		return false;
 	}
-	bool result = true;
+	bool result = main_function_exists(syntax_tree);
+	if(!result) {
+		return result;
+	}
 	for(int64_t i = 0; get_child(syntax_tree, i) != NULL; i++) {
 		if(is_function_definition(get_child(syntax_tree, i))) {
 			result = return_type_check(get_child(syntax_tree, i));
+		}
+	}
+	return result;
+}
+
+bool main_function_exists(ast* syntax_tree) {
+	if(!is_global_scope(syntax_tree)) {
+		return false;
+	}
+	string_view main_sv = set_sv_ptr("main", c_str_len("main"));
+	bool result = false;
+	for(int64_t i = 0; get_child(syntax_tree, i) != NULL; i++) {
+		if(!is_function_definition(get_child(syntax_tree, i))) {
+			continue;
+		}
+		ast* name = function_name(get_child(syntax_tree, i));
+		string_view name_sv = name->node.terminal.lexeme;
+		if(sv_cmp(name_sv, main_sv)) {
+			result = true;
+			break;
 		}
 	}
 	return result;

@@ -88,6 +88,7 @@ ast* get_child(ast* node, int64_t index);
 ast* get_parent(ast* node);
 bool is_global_scope(ast* node);
 bool is_scope(ast* node);
+bool is_identifier(ast* node);
 bool is_expression(ast* node);
 bool is_int(ast* node);
 bool is_function_definition(ast* node);

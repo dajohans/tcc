@@ -318,6 +318,19 @@ bool is_scope(ast* node) {
 	return is_global_scope(node) || is_local_scope(node);
 }
 
+bool is_identifier(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind != TERMINAL) {
+		return false;
+	}
+	if(node->node.terminal.token_kind != IDENTIFIER) {
+		return false;
+	}
+	return true;
+}
+
 bool is_expression(ast* node) {
 	if(node == NULL) {
 		return false;

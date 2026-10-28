@@ -5,11 +5,35 @@
 #include "string_view.h"
 #include "error.h"
 
+string uninit_str() {
+	return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+}
+
+string_view uninit_sv() {
+	return (string_view) { .ptr = NULL, .len = -1 };
+}
+
+bool invalid_str(string str) {
+	// TODO: Add unit testing
+	if(str.c_str == NULL || str.len < 0 || str.cap < 0) {
+		return true;
+	}
+	return false;
+}
+
+bool invalid_sv(string_view sv) {
+	// TODO: Add unit testing
+	if(sv.ptr == NULL || sv.len < 0) {
+		return true;
+	}
+	return false;
+}
+
 string alloc_string(int64_t cap) {
 	if(cap <= 0) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
-	string tmp = (string){ .c_str = NULL, .len = -1, .cap = -1};
+	string tmp = uninit_str();
 	tmp.c_str = malloc(cap * sizeof(*tmp.c_str));
 	if(tmp.c_str == NULL) {
 		log_error("Failed to allocate string memory");
@@ -46,17 +70,17 @@ int64_t c_str_len(char* str) {
 }
 
 string concat_string(string str1, string str2) {
-	if(str1.cap == -1 && str2.cap == -1) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	if(invalid_str(str1) && invalid_str(str2)) {
+		return uninit_str();
 	}
-	if(str1.cap == -1) {
+	if(invalid_str(str1)) {
 		return str2;
 	}
-	if(str2.cap == -1) {
+	if(invalid_str(str2)) {
 		return str1;
 	}
 	string tmp = alloc_string(str1.len + str2.len + 1);
-	if(tmp.cap == -1) {
+	if(invalid_str(tmp)) {
 		log_error("Failed to concatenate strings");
 		return tmp;
 	}
@@ -89,10 +113,10 @@ bool free_string(string* str) {
 
 string make_string(char* str){
 	if(str == NULL) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	string tmp = alloc_string(c_str_len(str) + 1);
-	if(tmp.cap == -1) {
+	if(invalid_str(tmp)) {
 		log_error("Failed to make string");
 		return tmp;
 	}
@@ -110,9 +134,9 @@ string set_string(string str, char* new) {
 	}
 	if(c_str_len(new) > str.cap - 1){
 		string tmp = alloc_string(c_str_len(new) + 1);
-		if(tmp.cap == -1) {
+		if(invalid_str(tmp)) {
 			log_error("Failed to set string content");
-			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+			return uninit_str();
 		}
 		free_string(&str);
 		str.c_str = tmp.c_str;
@@ -129,7 +153,7 @@ string set_string(string str, char* new) {
 
 string set_string_from_sv(string_view sv) {
 	string tmp = alloc_string(sv.len + 1);
-	if(tmp.cap == -1) {
+	if(invalid_str(tmp)) {
 		log_error("Failed to set string content");
 		return tmp;
 	}
@@ -142,21 +166,21 @@ string set_string_from_sv(string_view sv) {
 }
 
 string_view set_sv(string str, int64_t start_offset, int64_t len) {
-	if(str.cap < 0) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+	if(invalid_str(str)) {
+		return uninit_sv();
 	}
 	if(start_offset + len > str.cap) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+		return uninit_sv();
 	}
 	return (string_view) { .ptr = str.c_str + start_offset, .len = len };
 }
 
 string_view set_sv_ptr(char* str, int64_t len) {
 	if(str == NULL) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+		return uninit_sv();
 	}
 	if(c_str_len(str) + 1 < len) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+		return uninit_sv();
 	}
 	return (string_view) { .ptr = str, .len = len };
 }
@@ -171,14 +195,14 @@ string str_append_c_str(string str, char* c_str) {
 }
 
 string str_append_sv(string str, string_view sv) {
-	if(sv.len <= 0) {
+	if(invalid_sv(sv)) {
 		return str;
 	}
 	if(str.len + sv.len > str.cap - 1) {
 		string tmp = alloc_string(str.cap + sv.len);
-		if(tmp.cap < 0) {
+		if(invalid_str(tmp)) {
 			log_error("Failed to append string");
-			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+			return uninit_str();
 		}
 		for(int64_t i = 0; i < str.len; i++) {
 			tmp.c_str[i] = str.c_str[i];
@@ -215,9 +239,9 @@ string str_realloc(string str, int64_t new_cap) {
 		return str;
 	}
 	string tmp = alloc_string(new_cap);
-	if(tmp.cap < 0) {
+	if(invalid_str(tmp)) {
 		log_error("Failed to reallocate string");
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	int64_t len = 0;
 	if(str.len < tmp.cap - 1) {
@@ -249,8 +273,8 @@ bool sv_cmp(string_view sv1, string_view sv2) {
 }
 
 string_view sv_move_forward(string_view *sv, int64_t distance) {
-	if(sv == NULL || sv->ptr == NULL) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+	if(sv == NULL || invalid_sv(*sv)) {
+		return uninit_sv();
 	}
 	if(distance >= sv->len) {
 		string_view result = (string_view) { .ptr = sv->ptr, .len = sv->len };
@@ -265,8 +289,8 @@ string_view sv_move_forward(string_view *sv, int64_t distance) {
 }
 
 string_view sv_split_at_char(string_view *sv, char c) {
-	if(sv == NULL || sv->ptr == NULL) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+	if(sv == NULL || invalid_sv(*sv)) {
+		return uninit_sv();
 	}
 	string_view result = (string_view) { .ptr = sv->ptr, .len = sv->len };
 	while(sv->len > 0 && sv->ptr[0] != c) {
@@ -284,15 +308,15 @@ string_view sv_split_at_char(string_view *sv, char c) {
 bool sv_trim(string_view* sv) {
 	string_view ret_1 = sv_trim_left(sv);
 	string_view ret_2 = sv_trim_right(sv);
-	if(ret_1.ptr == NULL || ret_2.ptr == NULL) {
+	if(invalid_sv(ret_1) || invalid_sv(ret_2)) {
 		return false;
 	}
 	return true;
 }
 
 string_view sv_trim_left(string_view* sv) {
-	if(sv == NULL || sv->ptr == NULL) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+	if(sv == NULL || invalid_sv(*sv)) {
+		return uninit_sv();
 	}
 	string_view result = (string_view) { .ptr = sv->ptr, .len = sv->len };
 	while(sv->len > 0 && isspace(sv->ptr[0]) != 0) {
@@ -304,8 +328,8 @@ string_view sv_trim_left(string_view* sv) {
 }
 
 string_view sv_trim_right(string_view* sv) {
-	if(sv == NULL || sv->ptr == NULL) {
-		return (string_view) { .ptr = NULL, .len = -1 };
+	if(sv == NULL || invalid_sv(*sv)) {
+		return uninit_sv();
 	}
 	string_view result = (string_view) { .ptr = sv->ptr, .len = sv->len };
 	while(sv->len > 0 && isspace(sv->ptr[sv->len - 1]) != 0) {
@@ -318,7 +342,7 @@ string_view sv_trim_right(string_view* sv) {
 
 string stringify_c_str(char *str) {
 	if(str == NULL) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	string tmp;
 	tmp.c_str = str;
@@ -329,7 +353,7 @@ string stringify_c_str(char *str) {
 
 bool sv_is_int_literal(string_view sv) {
 	// TODO: Add unit testing
-	if(sv.len <= 0) {
+	if(invalid_sv(sv)) {
 		return false;
 	}
 	for(int64_t i = 0; i < sv.len; i++) {

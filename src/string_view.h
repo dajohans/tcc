@@ -26,6 +26,10 @@ typedef struct string_view {
 
 #define SV_ARG(sv) (int)sv.len, sv.ptr
 
+string uninit_str();
+string_view uninit_sv();
+bool invalid_str(string str);
+bool invalid_sv(string_view sv);
 string alloc_string(int64_t cap);
 string append_string(string str, string end);
 bool c_str_cmp(char* str_1, char* str_2);

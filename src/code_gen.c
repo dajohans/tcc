@@ -19,7 +19,7 @@
 
 string add_code_function_label(ast* identifier) {
 	if(!is_identifier(identifier)) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	return str_append_c_str(
 		set_string_from_sv(identifier->node.terminal.lexeme),
@@ -29,38 +29,38 @@ string add_code_function_label(ast* identifier) {
 
 string add_code_expression(ast* expr) {
 	if(!is_expression(expr)) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	ast* child = get_child(expr, 0);
 	if(child == NULL) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	return set_string_from_sv(child->node.terminal.lexeme);
 }
 
 string add_code_return_statement(ast* statement) {
 	if(!is_return_statement(statement)) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 
 	string tmp = add_code_expression(return_statement_expression(statement));
-	if(tmp.cap < 0) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	if(invalid_str(tmp)) {
+		return uninit_str();
 	}
 	string asm_code = str_append(
 		make_string("mov rax, "),
 		tmp
 	);
 	free_string(&tmp);
-	if(asm_code.cap < 0) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	if(invalid_str(asm_code)) {
+		return uninit_str();
 	}
 	asm_code = str_append_c_str(
 		asm_code,
 		"\n"
 	);
-	if(asm_code.cap < 0) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	if(invalid_str(asm_code)) {
+		return uninit_str();
 	}
 	asm_code = str_append_c_str(
 		asm_code,
@@ -71,29 +71,29 @@ string add_code_return_statement(ast* statement) {
 
 string add_code_function(ast* fun) {
 	if(!is_function_definition(fun)) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	string asm_code = add_code_function_label(function_name(fun));
 	ast* scope = function_local_scope(fun);
-	if(asm_code.cap < 0 || scope == NULL) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	if(invalid_str(asm_code) || scope == NULL) {
+		return uninit_str();
 	}
 	ast* statement = NULL;
-	string tmp = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	string tmp = uninit_str();
 	for(int64_t i = 0; i < ast_child_count(scope); i++) {
 		statement = get_child(scope, i);
 		if(is_return_statement(statement)) {
 			tmp = add_code_return_statement(statement);
 			if(tmp.cap < 0) {
 				free_string(&asm_code);
-				return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+				return uninit_str();
 			}
 			asm_code = str_append(
 				asm_code,
 				tmp
 			);
 			if(asm_code.cap < 0) {
-				return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+				return uninit_str();
 			}
 			free_string(&tmp);
 		}
@@ -107,26 +107,26 @@ string ast_to_assembly(ast* syntax_tree) {
 	// 3. Add all strings and constant data found in the file to the data string
 	/* string main_handling1, impl_handling1, impl_handling2; */
 	if(syntax_tree == NULL) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	if(!is_global_scope(syntax_tree)) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		return uninit_str();
 	}
 	string asm_code = make_string(ASM_PREAMBLE);
-	if(asm_code.cap < 0) {
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	if(invalid_str(asm_code)) {
+		return uninit_str();
 	}
 	ast* child = NULL;
-	string tmp = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	string tmp = uninit_str();
 	for(int64_t i = 0; i < ast_child_count(syntax_tree); i++) {
 		child = get_child(syntax_tree, i);
 		if(!is_function_definition(child)) {
 			continue;
 		}
 		tmp = add_code_function(child);
-		if(tmp.cap < 0) {
+		if(invalid_str(tmp)) {
 			free_string(&asm_code);
-			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+			return uninit_str();
 		}
 		asm_code = str_append(
 			asm_code,
@@ -140,7 +140,7 @@ string ast_to_assembly(ast* syntax_tree) {
 void code_gen(ast* syntax_tree) {
 	FILE *fp = fopen("a.s", "w");
 	string asm_code = ast_to_assembly(syntax_tree);
-	if(asm_code.cap < 0) {
+	if(invalid_str(asm_code)) {
 		log_error("Failed code generation");
 		fclose(fp);
 		return;

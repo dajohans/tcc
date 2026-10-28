@@ -231,7 +231,7 @@ UTEST(string, str_append_sv) {
 
 	// Test early return in reallocation
 	string str_small = alloc_string(1);
-	string_view str_huge = (string_view) { .ptr = NULL, .len = INT64_MAX - 1};
+	string_view str_huge = (string_view) { .ptr = "test", .len = INT64_MAX - 1};
 	result = str_append_sv(str_small, str_huge);
 	ASSERT_TRUE(result.c_str == NULL);
 	

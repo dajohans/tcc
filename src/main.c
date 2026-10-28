@@ -18,11 +18,11 @@ int main() {
 	/* string file_name = make_string("example_code/failing/minimal_bad_type.c"); */
 	/* string file_name = make_string("example_code/failing/minimal_wrong_type.c"); */
 	string file_name = make_string("example_code/working/minimal.c");
-	if(file_name.len == 0) {
+	if(invalid_str(file_name)) {
 		return 1;
 	}
 	string file_content = read_file(file_name);
-	if(file_content.cap == 0) {
+	if(invalid_str(file_content)) {
 		free_string(&file_name);
 		return 1;
 	}

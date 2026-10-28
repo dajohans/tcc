@@ -30,10 +30,11 @@ Linking as well as compilation of assembly to binary are out of scope.
 
 ## Current goal
 
-- [ ] Adapt type checking in semantic analysis to the new type table
+- [ ] Adapt the code generation to properly use the AST
 
 ## Completed goals
 
+- [x] Adapt type checking in semantic analysis to the new type table
 - [x] Improve the parser and lexer designs
     - [x] Specify grammar rules as static data, rather than each grammar rule being implemented as a separate C function
     - [x] Add functions for traversing, accessing data from, and modifying the token list and AST

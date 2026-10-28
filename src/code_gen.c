@@ -17,18 +17,6 @@
 	"mov rax, 60\n" \
 	"syscall\n"
 
-#define ASSEMBLY_PREAMBLE_1 \
-	".intel_syntax noprefix\n" \
-	".global _start\n"
-	
-#define ASSEMBLY_PREAMBLE_2 \
-	".text\n" \
-	"_start:\n"
-	
-#define ASSEMBLY_PREAMBLE_3 \
-	"mov rax, 60\n" \
-	"syscall\n"
-
 string add_code_function_label(ast* identifier) {
 	if(!is_identifier(identifier)) {
 		return (string) { .c_str = NULL, .len = -1, .cap = -1 };

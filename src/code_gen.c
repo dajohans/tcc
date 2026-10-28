@@ -45,10 +45,15 @@ string add_code_return_statement(ast* statement) {
 		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	}
 
+	string tmp = add_code_expression(return_statement_expression(statement));
+	if(tmp.cap < 0) {
+		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	}
 	string asm_code = str_append(
 		make_string("mov rax, "),
-		add_code_expression(return_statement_expression(statement))
+		tmp
 	);
+	free_string(&tmp);
 	if(asm_code.cap < 0) {
 		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	}
@@ -76,16 +81,23 @@ string add_code_function(ast* fun) {
 		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	}
 	ast* statement = NULL;
+	string tmp = (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	for(int64_t i = 0; i < ast_child_count(scope); i++) {
 		statement = get_child(scope, i);
 		if(is_return_statement(statement)) {
+			tmp = add_code_return_statement(statement);
+			if(tmp.cap < 0) {
+				free_string(&asm_code);
+				return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+			}
 			asm_code = str_append(
 				asm_code,
-				add_code_return_statement(statement)
+				tmp
 			);
 			if(asm_code.cap < 0) {
 				return (string) { .c_str = NULL, .len = -1, .cap = -1 };
 			}
+			free_string(&tmp);
 		}
 	}
 	return asm_code;

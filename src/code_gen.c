@@ -128,17 +128,24 @@ string ast_to_assembly(ast* syntax_tree) {
 	if(asm_code.cap < 0) {
 		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
 	}
-	ast* fun = get_child(syntax_tree, 0);
-	string tmp = add_code_function(fun);
-	if(tmp.cap < 0) {
-		free_string(&asm_code);
-		return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	ast* child = NULL;
+	string tmp = (string) { .c_str = NULL, .len = -1, .cap = -1 };
+	for(int64_t i = 0; i < ast_child_count(syntax_tree); i++) {
+		child = get_child(syntax_tree, i);
+		if(!is_function_definition(child)) {
+			continue;
+		}
+		tmp = add_code_function(child);
+		if(tmp.cap < 0) {
+			free_string(&asm_code);
+			return (string) { .c_str = NULL, .len = -1, .cap = -1 };
+		}
+		asm_code = str_append(
+			asm_code,
+			tmp
+		);
+		free_string(&tmp);
 	}
-	asm_code = str_append(
-		asm_code,
-		tmp
-	);
-	free_string(&tmp);
 	return asm_code;
 }
 

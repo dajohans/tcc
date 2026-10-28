@@ -30,10 +30,12 @@ Linking as well as compilation of assembly to binary are out of scope.
 
 ## Current goal
 
-- [ ] Adapt the code generation to properly use the AST
+- [ ] Enable more complex C expressions
+    - [ ] The basic arithmetic operations
 
 ## Completed goals
 
+- [x] Adapt the code generation to properly use the AST
 - [x] Adapt type checking in semantic analysis to the new type table
 - [x] Improve the parser and lexer designs
     - [x] Specify grammar rules as static data, rather than each grammar rule being implemented as a separate C function

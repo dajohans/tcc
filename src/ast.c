@@ -64,6 +64,9 @@ ast* ast_nonterminal_insert_child(ast* tree, ast* child) {
 		log_error("Failed to insert child - out of memory");
 		return NULL;
 	}
+	if(tree->node.non_terminal.children_count < 0) {
+		tree->node.non_terminal.children_count = 0;
+	}
 	tree->node.non_terminal.children[tree->node.non_terminal.children_count] = child;
 	tree->node.non_terminal.children_count++;
 	return tree;
@@ -206,9 +209,10 @@ void free_ast_helper(ast* syntax_tree) {
 		}
 		if(is_scope(syntax_tree)) {
 			free(syntax_tree->node.non_terminal.extra.type_table.table);
+			syntax_tree->node.non_terminal.extra.type_table.table = NULL;
 		}
 		free(syntax_tree->node.non_terminal.children);
-		
+		syntax_tree->node.non_terminal.children = NULL;
 	}
 	free(syntax_tree);
 }

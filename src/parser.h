@@ -8,7 +8,8 @@
 bool is_grammar_rule(ast* (rule) (token_ptr, int64_t));
 bool is_scope_rule(syntax_kind rule);
 syntax_kind get_rule_kind(ast* (rule) (token_ptr, int64_t));
-ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t));
+bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, ast* rule_top_node);
+ast* parse_rule_kind(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t));
 ast* parse_top_level(token_ptr tokens, int64_t index);
 ast* parse_identifier(token_ptr tokens, int64_t index);
 ast* parse_close_curly(token_ptr tokens, int64_t index);

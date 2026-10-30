@@ -49,6 +49,7 @@ ast* parse_expression(token_ptr, int64_t) { return NULL; }
 
 #define RULE_LEN 10
 ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
+	{ parse_global_scope,        parse_number,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_global_scope,        parse_function_definition,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_type,                parse_type_identifier,                                                            grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_expression,          parse_number,                                                                     grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
@@ -59,6 +60,7 @@ ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
 };
 
 syntax_kind rule_kind[] = {
+	GLOBAL_SCOPE,
 	GLOBAL_SCOPE,
 	TYPE,
 	EXPRESSION,
@@ -94,7 +96,74 @@ syntax_kind get_rule_kind(ast* (rule) (token_ptr, int64_t)) {
 	return current_rule_kind;
 }
 
-ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t)) {
+bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, ast* rule_top_node) {
+// Parse the rule grammar[rule_index]
+	if(*index >= tokens.len) {
+		return false;
+	}
+	int64_t num_nodes = 0;
+	ast *nodes[RULE_LEN - 1]; // -1 since the first element in each grammar rule is a placeholder
+	bool successful_rule_parse = true;
+	int64_t num_nodes_to_free = 0;
+	for(int64_t i = 0; i < RULE_LEN - 1; i++) {
+		if(grammar[rule_index][i + 1] == &grammar_end) {
+			break;
+		}
+
+		if(is_grammar_rule(grammar[rule_index][i+1]) == true) {
+			// Current grammar token is the left-hand side of
+			// another rule. Hence recurse for that rule.
+			nodes[i] = parse_rule_kind(tokens, index, grammar[rule_index][i+1]);
+			if(nodes[i] == NULL) {
+				successful_rule_parse = false;
+				num_nodes_to_free = i;
+				break;
+			}
+		} else {
+			// Current grammar token corresponds to a lexeme. Just
+			// parse that lexeme ast an AST subtree and add it.
+			nodes[i] = grammar[rule_index][i + 1](tokens, *index);
+			if(nodes[i] == NULL) {
+				successful_rule_parse = false;
+				num_nodes_to_free = i;
+				break;
+			}
+			if(nodes[i]->kind != NON_TERMINAL) {
+				*index += 1;
+			}
+		}
+		if(successful_rule_parse == true) {
+			num_nodes++;
+			bool result = ast_add_child(rule_top_node, nodes[i]);
+			if(result == false) {
+				log_error("Failed to build AST");
+				for(int64_t l = 0; l < i; l++) {
+					free_ast(nodes[i]);
+				}
+				free_ast(rule_top_node);
+				return false;
+			}
+		}
+	}
+	if(successful_rule_parse == false) {
+		for(int64_t l = 0; l < num_nodes_to_free; l++) {
+			free_ast(nodes[l]);
+		}
+		if(rule_top_node->node.non_terminal.children != NULL) {
+			// TODO: Could there also be a type_table inside
+			// top_node which needs to be freed?
+			free(rule_top_node->node.non_terminal.children);
+			rule_top_node->node.non_terminal.children_count = -1;
+			rule_top_node->first_char_index = -1;
+			rule_top_node->last_char_index = -1;
+		}
+	}
+	return successful_rule_parse;
+}
+
+ast* parse_rule_kind(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t)) {
+// Parse all grammar rules having the same rule_kind as the third
+// argument rule.
 	if(*index >= tokens.len) {
 		return NULL;
 	}
@@ -103,105 +172,25 @@ ast* parse_rule(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_
 		return NULL;
 	}
 	
-	int64_t num_nodes = 0;
-	ast *nodes[RULE_LEN - 1]; // -1 since the first element in each grammar rule is a placeholder
-	ast* top_node = malloc(sizeof(*top_node));
+	ast* top_node = init_ast_syntax_node(current_rule_kind, -1, -1);
 	if(top_node == NULL) {
 		log_error("Failed to allocate memory for ast top node");
 		return NULL;
 	}
-	top_node->kind = NON_TERMINAL;
-	top_node->parent = NULL;
-	top_node->first_char_index = -1;
-	top_node->last_char_index = -1;
-	top_node->node.non_terminal = (non_terminal_node) {
-		.kind = current_rule_kind,
-		.children = NULL,
-		.children_count = 0,
-		.children_cap = 0
-	};
 	if(is_scope_rule(current_rule_kind)) {
 		type_table tbl = create_global_type_table();
 		if(tbl.table == NULL) {
 			log_error("Failed to add type table to global scope");
 			return NULL;
 		}
-		top_node->parent = NULL;
-		top_node->first_char_index = -1;
-		top_node->last_char_index = -1;
-		top_node->node.non_terminal = (non_terminal_node) {
-			.kind = current_rule_kind,
-			.extra.type_table = tbl,
-			.children = NULL,
-			.children_count = 0,
-			.children_cap = 0
-		};
+		top_node->node.non_terminal.extra.type_table = tbl;
 	}
-	bool successful_rule_parse = true;
 	
 	for(int64_t l = 0; l < ARR_LEN(grammar); l++) {
 		if(grammar[l][0] != rule) {
 			continue;
 		}
-		num_nodes = 0;
-		successful_rule_parse = true;
-		for(int64_t i = 0; i < RULE_LEN - 1; i++) {
-			if(grammar[l][i + 1] == &grammar_end) {
-				break;
-			}
-
-			if(is_grammar_rule(grammar[l][i+1]) == true) {
-				// Current grammar token is the left-hand side of
-				// another rule. Hence recurse for that rule.
-				nodes[i] = parse_rule(tokens, index, grammar[l][i+1]);
-				if(nodes[i] == NULL) {
-					successful_rule_parse = false;
-					for(int64_t l = 0; l < i; l++) {
-						free_ast(nodes[i]);
-					}
-					if(top_node->node.non_terminal.children != NULL) {
-						free(top_node->node.non_terminal.children);
-						top_node->node.non_terminal.children_count = -1;
-						top_node->first_char_index = -1;
-						top_node->last_char_index = -1;
-					}
-					break;
-				}
-			} else {
-				// Current grammar token corresponds to a lexeme. Just
-				// parse that lexeme ast an AST subtree and add it.
-				nodes[i] = grammar[l][i + 1](tokens, *index);
-				if(nodes[i] == NULL) {
-					successful_rule_parse = false;
-					for(int64_t l = 0; l < i; l++) {
-						free_ast(nodes[i]);
-					}
-					if(top_node->node.non_terminal.children != NULL) {
-						free(top_node->node.non_terminal.children);
-						top_node->node.non_terminal.children_count = -1;
-						top_node->first_char_index = -1;
-						top_node->last_char_index = -1;
-					}
-					break;
-				}
-				if(nodes[i]->kind != NON_TERMINAL) {
-					*index += 1;
-				}
-			}
-			if(successful_rule_parse == true) {
-				num_nodes++;
-				bool result = ast_add_child(top_node, nodes[i]);
-				if(result == false) {
-					log_error("Failed to build AST");
-					for(int64_t l = 0; l < i; l++) {
-						free_ast(nodes[i]);
-					}
-					free_ast(top_node);
-					return NULL;
-				}
-			}
-		}
-		if(successful_rule_parse == true) {
+		if(parse_current_rule(tokens, index, l, top_node) == true) {
 			break;
 		}
 	}
@@ -213,7 +202,7 @@ ast* parse_top_level(token_ptr tokens, int64_t index) {
 	if(index + rule_len >= tokens.len) {
 		return NULL;
 	}
-	ast* node = parse_rule(tokens, &index, &parse_global_scope);
+	ast* node = parse_rule_kind(tokens, &index, &parse_global_scope);
 	if(node == NULL) {
 		return NULL;
 	}

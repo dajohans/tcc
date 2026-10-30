@@ -15,7 +15,15 @@ string_view uninit_sv() {
 
 bool invalid_str(string str) {
 	// TODO: Add unit testing
-	if(str.c_str == NULL || str.len < 0 || str.cap < 0) {
+	if(str.c_str == NULL || str.len < 0 || str.cap <= 0) {
+		return true;
+	}
+	return false;
+}
+
+bool sv_is_empty(string_view sv) {
+	// TODO: Add unit testing
+	if(sv.ptr == NULL || sv.len <= 0) {
 		return true;
 	}
 	return false;

@@ -29,6 +29,7 @@ typedef struct string_view {
 string uninit_str();
 string_view uninit_sv();
 bool invalid_str(string str);
+bool sv_is_empty(string_view sv);
 bool invalid_sv(string_view sv);
 string alloc_string(int64_t cap);
 string append_string(string str, string end);

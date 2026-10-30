@@ -66,7 +66,7 @@ const keyword_token keyword_token_list[] = {
 
 token_ptr lexer_tokenize_source(string_view sv) {
 	// TODO Perhaps log here that lexical analysis starts
-	if(sv.len <= 0) {
+	if(sv_is_empty(sv)) {
 		return (token_ptr){ .ptr = NULL, .len = -1, .cap = -1 };
 	} 
 	token_ptr token_array;
@@ -78,10 +78,10 @@ token_ptr lexer_tokenize_source(string_view sv) {
 	token_array.len = 0;
 	token_array.cap = 5;
 	int64_t index = 0;
-	while(sv.len > 0) {
+	while(!sv_is_empty(sv)) {
 		string_view trimmed = sv_trim_left(&sv);
 		index += trimmed.len;
-		if(sv.len <= 0) {
+		if(sv_is_empty(sv)) {
 			// TODO: If we switch to uint64_t then we can replace the
 			// call to next_non_whitespace with sv_trim_left. Ending
 			// up inside this if-statement when using
@@ -210,13 +210,8 @@ char* token_to_c_str(int32_t token) {
 }
 
 token tokenize_single_char(int64_t index, string_view sv, char c, int32_t token_kind) {
-	if(sv.len == 0 || sv.ptr[0] != c) {
-		return (token) {
-			.lexeme = (string_view) { .ptr = NULL, .len = 0 },
-			.token_kind = LEXEME_ERROR,
-			.first_char_index = -1,
-			.last_char_index = -1
-		};
+	if(sv_is_empty(sv) || sv.ptr[0] != c) {
+		return uninit_lex_token();
 	}
 	return (token) {
 		.lexeme = (string_view) { .ptr = sv.ptr, .len = 1 },
@@ -250,13 +245,8 @@ token tokenize_number(int64_t index, string_view sv) {
 	// TODO add other number representations, such as scientific
 	// notation, floating point numbers and numbers with type suffixes
 	// like .5f
-	if(!isdigit(sv.ptr[0])) {
-		return (token) {
-			.lexeme = (string_view) { .ptr = NULL, .len = 0 },
-			.token_kind = LEXEME_ERROR,
-			.first_char_index = -1,
-			.last_char_index = -1
-		};
+	if(sv_is_empty(sv) || !isdigit(sv.ptr[0])) {
+		return uninit_lex_token();
 	}
 	int64_t len = 0;
 	while(len < sv.len) {
@@ -275,12 +265,10 @@ token tokenize_number(int64_t index, string_view sv) {
 }
 
 token tokenize_keyword(int64_t index, string_view sv) {
-	token result = (token) {
-		.lexeme = (string_view) { .ptr = NULL, .len = 0 },
-		.token_kind = LEXEME_ERROR,
-		.first_char_index = -1,
-		.last_char_index = -1
-	};
+	if(sv_is_empty(sv)) {
+		return uninit_lex_token();
+	}
+	token result = uninit_lex_token();
 	for(int64_t i = 0; i < ARR_LEN(keyword_token_list); i++) {
 		if(keyword_token_list[i].lexeme.len <= sv.len) {
 			string_view tmp_src = (string_view) {
@@ -306,13 +294,8 @@ token tokenize_keyword(int64_t index, string_view sv) {
 }
 
 token tokenize_id(int64_t index, string_view sv) {
-	if(!(isalpha(sv.ptr[0]) || sv.ptr[0] == '_')) {
-		return (token) {
-			.lexeme = (string_view) { .ptr = NULL, .len = 0 },
-			.token_kind = LEXEME_ERROR,
-			.first_char_index = -1,
-			.last_char_index = -1
-		};
+	if(sv_is_empty(sv) || !(isalpha(sv.ptr[0]) || sv.ptr[0] == '_')) {
+		return uninit_lex_token();
 	}
 	int64_t len = 0;
 	while(len < sv.len) {
@@ -340,4 +323,13 @@ bool token_is_id_or_type(token tok) {
 		return false;
 	}
 	return true;
+}
+
+token uninit_lex_token() {
+	return (token) {
+		.lexeme = uninit_sv(),
+		.token_kind = LEXEME_ERROR,
+		.first_char_index = -1,
+		.last_char_index = -1
+	};
 }

@@ -33,6 +33,9 @@ bool main_function_exists(ast* syntax_tree) {
 			continue;
 		}
 		ast* name = function_name(get_child(syntax_tree, i));
+		if(name == NULL) {
+			break;
+		}
 		string_view name_sv = name->node.terminal.lexeme;
 		if(sv_cmp(name_sv, main_sv)) {
 			result = true;

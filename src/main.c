@@ -17,7 +17,8 @@ int main() {
 	/* string file_name = make_string("example_code/failing/minimal_misplaced_char.c"); */
 	/* string file_name = make_string("example_code/failing/minimal_bad_type.c"); */
 	/* string file_name = make_string("example_code/failing/minimal_wrong_type.c"); */
-	string file_name = make_string("example_code/working/minimal.c");
+	/* string file_name = make_string("example_code/working/minimal.c"); */
+	string file_name = make_string("example_code/working/minimal_expression.c");
 	if(invalid_str(file_name)) {
 		return 1;
 	}

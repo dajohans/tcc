@@ -208,11 +208,19 @@ void free_ast_helper(ast* syntax_tree) {
 			free_ast_helper(syntax_tree->node.non_terminal.children[i]);
 		}
 		if(is_scope(syntax_tree)) {
-			free(syntax_tree->node.non_terminal.extra.type_table.table);
-			syntax_tree->node.non_terminal.extra.type_table.table = NULL;
+			if(syntax_tree->node.non_terminal.extra.type_table.table != NULL) {
+				// Same comment as below.
+				free(syntax_tree->node.non_terminal.extra.type_table.table);
+				syntax_tree->node.non_terminal.extra.type_table.table = NULL;
+			}
 		}
-		free(syntax_tree->node.non_terminal.children);
-		syntax_tree->node.non_terminal.children = NULL;
+		if(syntax_tree->node.non_terminal.children != NULL) {
+			// A correctly constructed AST always has a non-null
+			// pointer here. This check ensures that parse error does
+			// not result in double free
+			free(syntax_tree->node.non_terminal.children);
+			syntax_tree->node.non_terminal.children = NULL;
+		}
 	}
 	free(syntax_tree);
 }

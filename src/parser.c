@@ -123,6 +123,7 @@ bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, as
 			// Current grammar token corresponds to a lexeme. Just
 			// parse that lexeme ast an AST subtree and add it.
 			nodes[i] = grammar[rule_index][i + 1](tokens, *index);
+			// TODO: Check index bounds here. i+1 can probably be out of bound by 1
 			if(nodes[i] == NULL) {
 				successful_rule_parse = false;
 				num_nodes_to_free = i;
@@ -153,6 +154,7 @@ bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, as
 			// TODO: Could there also be a type_table inside
 			// top_node which needs to be freed?
 			free(rule_top_node->node.non_terminal.children);
+			rule_top_node->node.non_terminal.children = NULL;
 			rule_top_node->node.non_terminal.children_count = -1;
 			rule_top_node->first_char_index = -1;
 			rule_top_node->last_char_index = -1;

@@ -92,6 +92,7 @@ token_ptr lexer_tokenize_source(string_view sv) {
 		token (*tokenize_fun_ptr[]) (int64_t, string_view) = {
 			&tokenize_keyword,
 			&tokenize_id,
+			&tokenize_operator_plus,
 			&tokenize_paren_open,
 			&tokenize_paren_close,
 			&tokenize_curly_open,
@@ -169,8 +170,8 @@ char* token_to_c_str(int32_t token) {
 		case KEYWORD_RETURN:
 			str = "KEYWORD_RETURN";
 			break;
-		case OPERATOR:
-			str = "OPERATOR";
+		case OPERATOR_PLUS:
+			str = "OPERATOR_PLUS";
 			break;
 		case PAREN_OPEN:
 			str = "PAREN_OPEN";
@@ -219,6 +220,10 @@ token tokenize_single_char(int64_t index, string_view sv, char c, int32_t token_
 		.first_char_index = index,
 		.last_char_index = index
 	};
+}
+
+token tokenize_operator_plus(int64_t index, string_view sv) {
+	return tokenize_single_char(index, sv, '+', OPERATOR_PLUS);
 }
 
 token tokenize_paren_open(int64_t index, string_view sv) {

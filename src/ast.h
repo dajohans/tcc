@@ -66,15 +66,24 @@ typedef struct abstract_syntax_tree {
 	// last character.
 } ast;
 
+typedef struct ast_ptr {
+	ast** ptr;
+	int64_t len;
+	int64_t cap;
+} ast_ptr;
+
 int64_t ast_child_count(ast* node);
 int64_t ast_child_cap(ast* node);
 ast* ast_scope_insert_child(ast* tree, ast* child);
 ast* ast_nonterminal_insert_child(ast* tree, ast* child);
+ast* ast_set_child_array(ast* tree, ast** child_array, int64_t child_count, int64_t child_cap);
 bool ast_can_have_children(ast* tree);
 ast* ast_realloc_children(ast* tree);
 ast* ast_set_child_count(ast* tree, int64_t count);
 ast* ast_set_child_cap(ast* tree, int64_t cap);
+ast* ast_set_first_char_index(ast* tree, int64_t index);
 ast* ast_set_last_char_index(ast* tree, int64_t index);
+int64_t ast_get_first_char_index(ast* tree);
 int64_t ast_get_last_char_index(ast* tree);
 bool ast_add_child(ast* tree, ast* child);
 int64_t ast_num_tokens_helper(ast* syntax_tree);
@@ -111,5 +120,8 @@ type_table create_global_type_table();
 bool free_type_table(type_table* tbl);
 void print_expression_helper(ast* syntax_tree);
 void print_expression_types(ast* syntax_tree);
+bool ast_ptr_is_valid(ast_ptr nodes);
+ast_ptr ast_ptr_default();
+ast_ptr alloc_ast_ptr(int64_t size);
 
 #endif // AST_H

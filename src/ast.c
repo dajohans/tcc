@@ -136,12 +136,27 @@ ast* ast_set_child_cap(ast* tree, int64_t cap) {
 	return tree;
 }
 
+ast* ast_set_first_char_index(ast* tree, int64_t index) {
+	if(tree == NULL || index <= 0) {
+		return NULL;
+	}
+	tree->first_char_index = index;
+	return tree;
+}
+
 ast* ast_set_last_char_index(ast* tree, int64_t index) {
 	if(tree == NULL || index <= 0) {
 		return NULL;
 	}
 	tree->last_char_index = index;
 	return tree;
+}
+
+int64_t ast_get_first_char_index(ast* tree) {
+	if(tree == NULL) {
+		return -1;
+	}
+	return tree->first_char_index;
 }
 
 int64_t ast_get_last_char_index(ast* tree) {
@@ -164,6 +179,10 @@ bool ast_add_child(ast* tree, ast* child) {
 			log_error("Failed to add child to ast");
 			return false;
 		}
+	}
+
+	if(ast_child_count(tree) == 0) {
+		ast_set_first_char_index(tree, ast_get_first_char_index(child));
 	}
 	
 	ast_set_last_char_index(tree, ast_get_last_char_index(child));
@@ -261,6 +280,11 @@ ast* init_ast_token_node(token lexical_token) {
 	node->parent = NULL;
 	node->node.terminal.lexeme = lexical_token.lexeme;
 	node->node.terminal.token_kind = lexical_token.token_kind;
+	// TODO: The first_char_index and last_char_index is not
+	// duplicated in the ast struct and its token member variable.
+	// Should probably ensure that only one is used.
+	node->first_char_index = lexical_token.first_char_index;
+	node->last_char_index = lexical_token.last_char_index;
 	return node;
 }
 
@@ -648,3 +672,31 @@ void print_expression_types(ast* syntax_tree) {
 	print_expression_helper(syntax_tree);
 }
 
+bool ast_ptr_is_valid(ast_ptr nodes) {
+	if(nodes.ptr == NULL || nodes.len < 0 || nodes.cap <= 0) {
+		return false;
+	}
+	return true;
+}
+
+ast_ptr ast_ptr_default() {
+	return (ast_ptr) {
+		.ptr = NULL,
+		.len = -1,
+		.cap = -1
+	};
+}
+
+ast_ptr alloc_ast_ptr(int64_t size) {
+	if(size <= 0) {
+		return ast_ptr_default();
+	}
+	ast_ptr nodes;
+	nodes.ptr = malloc(size * sizeof(*nodes.ptr));
+	if(nodes.ptr == NULL) {
+		return ast_ptr_default();
+	}
+	nodes.len = 0;
+	nodes.cap = size;
+	return nodes;
+}

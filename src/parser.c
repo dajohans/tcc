@@ -99,15 +99,87 @@ syntax_kind get_rule_kind(ast* (rule) (token_ptr, int64_t)) {
 	return current_rule_kind;
 }
 
-bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, ast* rule_top_node) {
-// Parse the rule grammar[rule_index]
-	if(*index >= tokens.len) {
+bool is_left_recursive(int64_t rule_index) {
+	if(rule_index < 0 || rule_index >= ARR_LEN(grammar)) {
+	return false;
+	}
+	if(grammar[rule_index][0] != grammar[rule_index][1]) {
 		return false;
 	}
-	int64_t num_nodes = 0;
+	return true;
+}
+
+ast_ptr match_non_recursive(token_ptr tokens, int64_t index, ast* (rule) (token_ptr, int64_t)) {
+	if(index >= tokens.len) {
+		return ast_ptr_default();
+	}
+	ast_ptr node_ptr = alloc_ast_ptr(RULE_LEN - 1); // -1 since the first element in each grammar rule is a placeholder
+	if(!ast_ptr_is_valid(node_ptr)) {
+		return ast_ptr_default();
+	}
+	bool successful_rule_parse = true;
+	int64_t index_progress = 0;
+	int64_t initial_rule_index = 0;
+	syntax_kind current_rule_kind = get_rule_kind(rule);
+	for(int64_t i = 0; i < ARR_LEN(grammar); i++) {
+		if(current_rule_kind != rule_kind[i]) {
+			continue;
+		}
+		if(is_left_recursive(i)) {
+			continue;
+		}
+		for(int64_t l = 0; l < RULE_LEN - 1; l++) {
+			if(grammar[i][l + 1] == &grammar_end) {
+				break;
+			}
+			if(is_grammar_rule(grammar[i][l + 1])) {
+				node_ptr.ptr[l] = parse_rule_kind(tokens, index + index_progress, grammar[i][l + 1], &initial_rule_index);
+			
+			} else {
+				node_ptr.ptr[l] = grammar[i][l + 1](tokens, index + index_progress);
+			}
+			if(node_ptr.ptr[l] == NULL) {
+				successful_rule_parse = false;
+				break;
+			}
+			node_ptr.len += 1;
+			index_progress += ast_num_tokens(node_ptr.ptr[l]);
+		}
+		
+	}
+	if(!successful_rule_parse) {
+		for(int64_t l = 0; l < node_ptr.len; l++) {
+			free_ast(node_ptr.ptr[l]);
+		}
+		free(node_ptr.ptr);
+		node_ptr = ast_ptr_default();
+	}
+	return node_ptr;
+}
+
+bool parse_left_recursive_rule(token_ptr tokens, int64_t index, int64_t rule_index, ast* rule_top_node) {
+	if(index >= tokens.len) {
+		return false;
+	}
+	return true;
+}
+
+bool parse_current_rule(token_ptr tokens, int64_t index, int64_t rule_index, ast* rule_top_node) {
+// Parse the rule grammar[rule_index]
+	if(index >= tokens.len) {
+		return false;
+	}
+	/* int64_t num_nodes = 0; */
 	ast *nodes[RULE_LEN - 1]; // -1 since the first element in each grammar rule is a placeholder
 	bool successful_rule_parse = true;
 	int64_t num_nodes_to_free = 0;
+	int64_t index_progress = 0;
+	int64_t initial_rule_index = 0;
+	bool try_another_rule = false;
+	if(grammar[rule_index][0] == grammar[rule_index][1]) {
+		// The rule is left-recursive.
+		// TODO: Make sure we consume a token before recursing
+	}
 	for(int64_t i = 0; i < RULE_LEN - 1; i++) {
 		if(grammar[rule_index][i + 1] == &grammar_end) {
 			break;
@@ -116,16 +188,35 @@ bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, as
 		if(is_grammar_rule(grammar[rule_index][i+1]) == true) {
 			// Current grammar token is the left-hand side of
 			// another rule. Hence recurse for that rule.
-			nodes[i] = parse_rule_kind(tokens, index, grammar[rule_index][i+1]);
+			nodes[i] = parse_rule_kind(tokens, index + index_progress, grammar[rule_index][i+1], &initial_rule_index);
 			if(nodes[i] == NULL) {
 				successful_rule_parse = false;
 				num_nodes_to_free = i;
 				break;
 			}
+			printf("Nindex_prog före: %ld\n", index_progress);
+			index_progress += ast_num_tokens(nodes[i]);
+			printf("Nindex_prog efter: %ld\n", index_progress);
+
+			// TODO: Maybe switch from bottom-up parsing to top-down
+			// parsing. In other words, we should always consume one
+			// token before recursing
+
+			/* printf("index: %ld\n", nodes[i]->first_char_index); */
+
+			// NOTE: It's not enough to simply go back in the loop by
+			// reducing i and then trying another definition of the
+			// same kind as grammar[rule_index][i+1]. The current
+			// attempt at verifying the rule increased the token array
+			// index. So if we reduce the loop variable from i to i-k
+			// then we need to reduce 'index' by the amount of tokens
+			// that had been identified in loop iterations i-k+1, ...,
+			// i.
+			
 		} else {
 			// Current grammar token corresponds to a lexeme. Just
 			// parse that lexeme ast an AST subtree and add it.
-			nodes[i] = grammar[rule_index][i + 1](tokens, *index);
+			nodes[i] = grammar[rule_index][i + 1](tokens, index + index_progress);
 			// TODO: Check index bounds here. i+1 can probably be out of bound by 1
 			if(nodes[i] == NULL) {
 				successful_rule_parse = false;
@@ -133,11 +224,14 @@ bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, as
 				break;
 			}
 			if(nodes[i]->kind != NON_TERMINAL) {
-				*index += 1;
+			    printf("Tindex_prog före: %ld\n", index_progress);
+				index_progress += ast_num_tokens(nodes[i]);
+			    printf("Tindex_prog efter: %ld\n", index_progress);
+				/* index_progress += 1; */
+				/* *index += 1; */
 			}
 		}
 		if(successful_rule_parse == true) {
-			num_nodes++;
 			bool result = ast_add_child(rule_top_node, nodes[i]);
 			if(result == false) {
 				log_error("Failed to build AST");
@@ -147,9 +241,26 @@ bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, as
 				free_ast(rule_top_node);
 				return false;
 			}
+		} else if(try_another_rule) {
+			/* for(int64_t l = 0; l < num_nodes_to_free; l++) { */
+			/* 	free_ast(nodes[l]); */
+			/* } */
+			if(rule_top_node->node.non_terminal.children != NULL) {
+				// TODO: Could there also be a type_table inside
+				// top_node which needs to be freed?
+				free(rule_top_node->node.non_terminal.children);
+				rule_top_node->node.non_terminal.children = NULL;
+				rule_top_node->node.non_terminal.children_count = -1;
+				rule_top_node->first_char_index = -1;
+				rule_top_node->last_char_index = -1;
+			}
+			i = -1;
+			index_progress = 0;
+			continue;
 		}
 	}
 	if(successful_rule_parse == false) {
+		/* printf("index: %ld\n", rule_top_node->first_char_index); */
 		for(int64_t l = 0; l < num_nodes_to_free; l++) {
 			free_ast(nodes[l]);
 		}
@@ -166,23 +277,23 @@ bool parse_current_rule(token_ptr tokens, int64_t* index, int64_t rule_index, as
 	return successful_rule_parse;
 }
 
-ast* parse_rule_kind(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, int64_t)) {
+ast* parse_rule_kind(token_ptr tokens, int64_t index, ast* (rule) (token_ptr, int64_t), int64_t* initial_rule) {
 // Parse all grammar rules having the same rule_kind as the third
 // argument rule.
-	if(*index >= tokens.len) {
+	if(index >= tokens.len) {
 		return NULL;
 	}
-	syntax_kind current_rule_kind = get_rule_kind(rule);
-	if(current_rule_kind == AST_ERROR) {
+	syntax_kind rule_kind = get_rule_kind(rule);
+	if(rule_kind == AST_ERROR) {
 		return NULL;
 	}
 	
-	ast* top_node = init_ast_syntax_node(current_rule_kind, -1, -1);
+	ast* top_node = init_ast_syntax_node(rule_kind, -1, -1);
 	if(top_node == NULL) {
 		log_error("Failed to allocate memory for ast top node");
 		return NULL;
 	}
-	if(is_scope_rule(current_rule_kind)) {
+	if(is_scope_rule(rule_kind)) {
 		type_table tbl = create_global_type_table();
 		if(tbl.table == NULL) {
 			log_error("Failed to add type table to global scope");
@@ -191,11 +302,15 @@ ast* parse_rule_kind(token_ptr tokens, int64_t* index, ast* (rule) (token_ptr, i
 		top_node->node.non_terminal.extra.type_table = tbl;
 	}
 	
-	for(int64_t l = 0; l < ARR_LEN(grammar); l++) {
+	for(int64_t l = *initial_rule; l < ARR_LEN(grammar); l++) {
+		/* *initial_rule += 1; */
+		/* syntax_kind current_rule_kind = get_rule_kind(grammar[l][0]); */
+		/* if(current_rule_kind != rule_kind) { */
 		if(grammar[l][0] != rule) {
 			continue;
 		}
 		if(parse_current_rule(tokens, index, l, top_node) == true) {
+			index += ast_num_tokens(top_node);
 			break;
 		}
 	}
@@ -207,7 +322,8 @@ ast* parse_top_level(token_ptr tokens, int64_t index) {
 	if(index + rule_len >= tokens.len) {
 		return NULL;
 	}
-	ast* node = parse_rule_kind(tokens, &index, &parse_global_scope);
+	int64_t initial_rule = 0;
+	ast* node = parse_rule_kind(tokens, index, &parse_global_scope, &initial_rule);
 	if(node == NULL) {
 		return NULL;
 	}

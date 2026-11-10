@@ -32,6 +32,7 @@ ast* parse_function_definition(token_ptr, int64_t) { return NULL; }
 ast* parse_local_scope(token_ptr, int64_t) { return NULL; }
 ast* parse_global_scope(token_ptr, int64_t) { return NULL; }
 ast* parse_type(token_ptr, int64_t) { return NULL; }
+ast* parse_expression_r(token_ptr, int64_t) { return NULL; }
 ast* parse_expression(token_ptr, int64_t) { return NULL; }
 
 
@@ -49,9 +50,10 @@ ast* parse_expression(token_ptr, int64_t) { return NULL; }
 
 #define RULE_LEN 10
 ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
-	{ parse_global_scope,        parse_number,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_global_scope,        parse_function_definition,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_type,                parse_type_identifier,                                                            grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_expression_r,        parse_expression, parse_operator_plus, parse_expression_r,                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_expression_r,        parse_expression,                                                                 grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_expression,          parse_number,                                                                     grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_return_statement,    parse_keyword_return, parse_expression, parse_semicolon,                          grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_function_prototype,  parse_type, parse_identifier, parse_open_paren, parse_close_paren,                grammar_end, grammar_end, grammar_end, grammar_end, grammar_end  },
@@ -61,8 +63,9 @@ ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
 
 syntax_kind rule_kind[] = {
 	GLOBAL_SCOPE,
-	GLOBAL_SCOPE,
 	TYPE,
+	EXPRESSION,
+	EXPRESSION,
 	EXPRESSION,
 	RETURN_STATEMENT,
 	FUNCTION_PROTOTYPE,
@@ -272,6 +275,20 @@ ast* parse_open_paren(token_ptr tokens, int64_t index) {
 		return NULL;
 	}
 	if(tokens.ptr[index].token_kind != PAREN_OPEN) {
+		return NULL;
+	}
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
+		return NULL;
+	}
+	return node;
+}
+
+ast* parse_operator_plus(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
+		return NULL;
+	}
+	if(tokens.ptr[index].token_kind != OPERATOR_PLUS) {
 		return NULL;
 	}
 	ast* node = init_ast_token_node(tokens.ptr[index]);

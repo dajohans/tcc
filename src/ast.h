@@ -112,6 +112,7 @@ ast* function_prototype_name(ast* fun);
 ast* function_name(ast* fun);
 ast* return_statement_expression(ast* statement);
 char* grammar_token_to_c_str(int32_t token);
+void print_ast_node_kind(ast* node);
 void print_ast_helper(ast* syntax_tree, int64_t padding_count);
 void print_ast(ast* syntax_tree);
 void print_type_table(type_table tbl);

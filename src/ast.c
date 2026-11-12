@@ -556,6 +556,14 @@ char* grammar_token_to_c_str(int32_t token) {
 	return str;
 }
 
+void print_ast_node_kind(ast* node) {
+	if(node->kind == NON_TERMINAL) {
+		printf("%s\n", grammar_token_to_c_str(node->node.non_terminal.kind));
+	} else {
+		printf("%s - %.*s\n", token_to_c_str(node->node.terminal.token_kind), SV_ARG(node->node.terminal.lexeme));
+	}
+}
+
 void print_ast_helper(ast* syntax_tree, int64_t padding_count) {
 	for(int64_t i = 0; i < padding_count; i++) {
 		printf("  ");

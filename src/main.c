@@ -30,15 +30,15 @@ int main() {
 
 	string_view src_sv = (string_view) { .ptr = file_content.c_str, .len = file_content.len };
 	token_ptr token_array = lexer_tokenize_source(src_sv);
-	/* for(int64_t i = 0; i < token_array.len; i++) { */
-	/* 	printf( */
-	/* 		"lexeme: %-15s - %.*s - %c - %c\n", */
-	/* 		token_to_c_str(token_array.ptr[i].token_kind), */
-	/* 		SV_ARG(token_array.ptr[i].lexeme), */
-	/* 		file_content.c_str[token_array.ptr[i].first_char_index], */
-	/* 		file_content.c_str[token_array.ptr[i].last_char_index] */
-	/* 	); */
-	/* } */
+	for(int64_t i = 0; i < token_array.len; i++) {
+		printf(
+			"lexeme: %-15s - %.*s - %c - %c\n",
+			token_to_c_str(token_array.ptr[i].token_kind),
+			SV_ARG(token_array.ptr[i].lexeme),
+			file_content.c_str[token_array.ptr[i].first_char_index],
+			file_content.c_str[token_array.ptr[i].last_char_index]
+		);
+	}
 
 	ast* syntax_tree = parse_top_level(token_array, 0);
 	

@@ -704,10 +704,38 @@ bool parser_assign_expression_types(ast* syntax_tree) {
 			if(!parser_assign_expression_types(child)) {
 				all_expression_types_valid = false;
 			}
-		} else {
-			if(!determine_expression_type(child)) {
+			continue;
+		}
+		if(is_nested_expression(child)) {
+			if(ast_child_count(child) != 3) {
 				all_expression_types_valid = false;
+				continue;
 			}
+			ast* expr_1 = get_child(child, 0);
+			ast* op = get_child(child, 1);
+			ast* expr_2 = get_child(child, 2);
+			if(!(is_expression(expr_1) && is_operator_plus(op) && is_expression(expr_2))) {
+				all_expression_types_valid = false;
+				continue;
+			}
+			bool expr_1_type_determined = determine_expression_type(expr_1);
+			bool expr_2_type_determined = determine_expression_type(expr_2);
+			if(!(expr_1_type_determined && expr_2_type_determined)) {
+				all_expression_types_valid = false;
+				continue;
+			}
+			if(expr_1->node.non_terminal.extra.type.id != expr_2->node.non_terminal.extra.type.id) {
+				// TODO: Adapt this to handle automatic conversion.
+				// For example an int multiplied by a float becomes an
+				// int or a float even if they are not the same type.
+				all_expression_types_valid = false;
+				continue;
+			}
+			child->node.non_terminal.extra.type = expr_1->node.non_terminal.extra.type;
+			continue;
+		}
+		if(!determine_expression_type(child)) {
+			all_expression_types_valid = false;
 		}
 	}
 	return all_expression_types_valid;

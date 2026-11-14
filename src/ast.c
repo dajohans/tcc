@@ -461,6 +461,32 @@ bool is_return_statement(ast* node) {
 	return true;
 }
 
+bool is_operator_plus(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind != TERMINAL) {
+		return false;
+	}
+	if(node->node.terminal.token_kind != OPERATOR_PLUS) {
+		return false;
+	}
+	return true;
+}
+
+bool is_nested_expression(ast* node) {
+	if(!is_expression(node)) {
+		return false;
+	}
+	// TODO: This should probably check that it has the proper
+	// structure of a list of expressions which are separated by
+	// operators
+	if(ast_child_count(node) == 0) {
+		return false;
+	}
+	return true;
+}
+
 ast* function_prototype_return_type(ast* fun) {
 	if(!is_function_prototype(fun)) {
 		return NULL;
@@ -569,7 +595,16 @@ void print_ast_helper(ast* syntax_tree, int64_t padding_count) {
 		printf("  ");
 	}
 	if(syntax_tree->kind == NON_TERMINAL) {
-		printf("%s\n", grammar_token_to_c_str(syntax_tree->node.non_terminal.kind));
+		if(!is_expression(syntax_tree)) {
+			printf("%s\n", grammar_token_to_c_str(syntax_tree->node.non_terminal.kind));
+		} else {
+			printf(
+				"%s - type: %.*s\n",
+				grammar_token_to_c_str(syntax_tree->node.non_terminal.kind),
+				SV_ARG(syntax_tree->node.non_terminal.extra.type.name)
+			);
+		}
+		
 		for(int64_t i = 0; i < syntax_tree->node.non_terminal.children_count; i++) {
 			print_ast_helper(syntax_tree->node.non_terminal.children[i], padding_count + 1);
 		}

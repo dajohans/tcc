@@ -108,6 +108,10 @@ bool is_left_recursive(int64_t rule_index) {
 }
 
 ast* parse_rule_non_recursive(token_ptr tokens, int64_t index, ast* (rule) (token_ptr, int64_t)) {
+/* Go through the grammar rules in the 'grammar' variable in order.
+ * Attempt to parse the rules of the same kind as 'rule', but only those
+ * that are not left-recursive, untill one parses successfully.
+ */
 	if(index >= tokens.len) {
 		return NULL;
 	}
@@ -198,6 +202,9 @@ ast* parse_rule_non_recursive(token_ptr tokens, int64_t index, ast* (rule) (toke
 }
 
 ast* parse_current_rule(token_ptr tokens, int64_t index, int64_t rule_index) {
+/* Attempt to parse the grammar rule described by the array
+ * grammar[rule_index].
+ */
 	if(index >= tokens.len) {
 		return NULL;
 	}
@@ -289,8 +296,10 @@ ast* parse_current_rule(token_ptr tokens, int64_t index, int64_t rule_index) {
 }
 
 ast* parse_rule_kind(token_ptr tokens, int64_t index, ast* (rule) (token_ptr, int64_t)) {
-// Parse all grammar rules having the same rule_kind as the third
-// argument rule.
+/* Go through the grammar rules in the 'grammar' variable in order.
+ * Attempt to parse the rules of the same kind as 'rule', untill one
+ * parses successfully.
+ */
 	if(index >= tokens.len) {
 		return NULL;
 	}

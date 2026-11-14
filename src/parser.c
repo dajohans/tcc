@@ -107,7 +107,7 @@ bool is_left_recursive(int64_t rule_index) {
 	return true;
 }
 
-ast* match_non_recursive(token_ptr tokens, int64_t index, ast* (rule) (token_ptr, int64_t)) {
+ast* parse_rule_non_recursive(token_ptr tokens, int64_t index, ast* (rule) (token_ptr, int64_t)) {
 	if(index >= tokens.len) {
 		return NULL;
 	}
@@ -210,7 +210,7 @@ ast* parse_current_rule(token_ptr tokens, int64_t index, int64_t rule_index) {
 	syntax_kind current_rule_kind = rule_kind[rule_index];
 	int64_t start_index = 0;
 	if(is_left_recursive(rule_index)) {
-		node_ptr.ptr[0] = match_non_recursive(tokens, index, grammar[rule_index][0]);
+		node_ptr.ptr[0] = parse_rule_non_recursive(tokens, index, grammar[rule_index][0]);
 		if(node_ptr.ptr[0] == NULL) {
 			free(node_ptr.ptr);
 			return NULL;

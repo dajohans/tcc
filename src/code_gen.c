@@ -41,6 +41,26 @@ string add_code_expression(ast* expr) {
 		ret_str = str_append_sv(ret_str, child->node.terminal.lexeme);
 		ret_str = str_append_c_str(ret_str, "\n");
 	}
+	// As long as there are no parenthesis in the arithmetic
+	// expression, it should be enough to use 3 registers to compute
+	// the expression, perhaps only 2 registers. Suppose these are
+	// registers r8, r9, r10. Whenever a parenthesis is encountered,
+	// put the the currently used registers on the stack. If only r8
+	// is used, put it on the stack; if all are used put all three on
+	// the stack. Then proceed to the sub-expression inside the
+	// parenthesis. If that sub-expression does not itself contain
+	// parentheses, then it can be computed using only r8, r9, r10.
+	// When restoring the rergister values from the stack, put the
+	// newly computed value from the parenthesis sub-expression in the
+	// register of lowest number. For example, if r8 is used, put the
+	// computer sub-expression value in r9. If r8 is not used (which
+	// could perhaps happen if the first symbol in an expression is a
+	// parenthesis), then put the computed sub-expression value in r8.
+	// Then proceed.
+	// This seems to require a new data structure: stack.
+	// With this new stack data structure, we keep track of what has
+	// been placed on the memory stack. Since the memory stack is not
+	// annotated, we need to keep track of what has been placed there.
 	return ret_str;
 }
 

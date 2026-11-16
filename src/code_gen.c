@@ -31,11 +31,17 @@ string add_code_expression(ast* expr) {
 	if(!is_expression(expr)) {
 		return uninit_str();
 	}
-	ast* child = get_child(expr, 0);
-	if(child == NULL) {
-		return uninit_str();
+	string ret_str = uninit_str();
+	if(!is_nested_expression(expr)) {
+		ast* child = get_child(expr, 0);
+		if(child == NULL) {
+			return uninit_str();
+		}
+		ret_str = make_string("mov r8, ");
+		ret_str = str_append_sv(ret_str, child->node.terminal.lexeme);
+		ret_str = str_append_c_str(ret_str, "\n");
 	}
-	return set_string_from_sv(child->node.terminal.lexeme);
+	return ret_str;
 }
 
 string add_code_return_statement(ast* statement) {
@@ -43,29 +49,14 @@ string add_code_return_statement(ast* statement) {
 		return uninit_str();
 	}
 
-	string tmp = add_code_expression(return_statement_expression(statement));
-	if(invalid_str(tmp)) {
-		return uninit_str();
-	}
-	string asm_code = str_append(
-		make_string("mov rax, "),
-		tmp
-	);
-	free_string(&tmp);
+	string asm_code = add_code_expression(return_statement_expression(statement));
 	if(invalid_str(asm_code)) {
 		return uninit_str();
 	}
-	asm_code = str_append_c_str(
-		asm_code,
-		"\n"
-	);
+	asm_code = str_append_c_str(asm_code, "mov rax, r8\nret\n");
 	if(invalid_str(asm_code)) {
 		return uninit_str();
 	}
-	asm_code = str_append_c_str(
-		asm_code,
-		"ret\n"
-	);
 	return asm_code;
 }
 

@@ -27,7 +27,7 @@ string add_code_function_label(ast* identifier) {
 	);
 }
 
-string add_code_expression(ast* expr) {
+string add_code_expression_helper(ast* expr) {
 	if(!is_expression(expr)) {
 		return uninit_str();
 	}
@@ -37,10 +37,26 @@ string add_code_expression(ast* expr) {
 		if(child == NULL) {
 			return uninit_str();
 		}
-		ret_str = make_string("mov r8, ");
+		ret_str = make_string("mov r9, ");
 		ret_str = str_append_sv(ret_str, child->node.terminal.lexeme);
 		ret_str = str_append_c_str(ret_str, "\n");
-	}
+	} else {
+		ret_str = add_code_expression_helper(get_child(expr, 2));
+		if(invalid_str(ret_str)) {
+			return uninit_str();
+		}
+		ast* child = get_child(expr, 0);
+		// child is an expression. Need to get the underlying terminal
+		// node, which we denote grandchild.
+		ast* grandchild = get_child(child, 0);
+		ret_str = str_append_c_str(ret_str, "mov r8, ");
+		ret_str = str_append_sv(ret_str, grandchild->node.terminal.lexeme);
+		ret_str = str_append_c_str(ret_str, "\n");
+		
+		child = get_child(expr, 1);
+		if(is_operator_plus(child)) {
+			ret_str = str_append_c_str(ret_str, "add r9, r8\n");
+		}
 	// As long as there are no parenthesis in the arithmetic
 	// expression, it should be enough to use 3 registers to compute
 	// the expression, perhaps only 2 registers. Suppose these are
@@ -61,6 +77,27 @@ string add_code_expression(ast* expr) {
 	// With this new stack data structure, we keep track of what has
 	// been placed on the memory stack. Since the memory stack is not
 	// annotated, we need to keep track of what has been placed there.
+	}
+	return ret_str;
+}
+
+string add_code_expression(ast* expr) {
+	if(!is_expression(expr)) {
+		return uninit_str();
+	}
+	string ret_str = uninit_str();
+	if(!is_nested_expression(expr)) {
+		ast* child = get_child(expr, 0);
+		if(child == NULL) {
+			return uninit_str();
+		}
+		ret_str = make_string("mov r8, ");
+		ret_str = str_append_sv(ret_str, child->node.terminal.lexeme);
+		ret_str = str_append_c_str(ret_str, "\n");
+	} else {
+		ret_str = add_code_expression_helper(expr);
+		ret_str = str_append_c_str(ret_str, "mov r8, r9\n");
+	}
 	return ret_str;
 }
 

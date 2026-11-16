@@ -481,7 +481,13 @@ bool is_nested_expression(ast* node) {
 	// TODO: This should probably check that it has the proper
 	// structure of a list of expressions which are separated by
 	// operators
-	if(ast_child_count(node) == 0) {
+	if(ast_child_count(node) != 3) {
+		return false;
+	}
+	ast* child_0 = get_child(node, 0);
+	ast* child_1 = get_child(node, 1);
+	ast* child_2 = get_child(node, 2);
+	if(!(is_expression(child_0) && is_operator_plus(child_1) && is_expression(child_2))) {
 		return false;
 	}
 	return true;

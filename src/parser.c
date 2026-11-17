@@ -659,6 +659,9 @@ bool determine_expression_type(ast* expr) {
 	if(expr == NULL) {
 		return false;
 	}
+	if(expr->node.non_terminal.extra.type.name.ptr != NULL) {
+		return true;
+	}
 	ast* child = get_child(expr, 0);
 	bool determined_type = false;
 	type_info expr_type = (type_info) {
@@ -707,17 +710,13 @@ bool parser_assign_expression_types(ast* syntax_tree) {
 			continue;
 		}
 		if(is_nested_expression(child)) {
-			if(ast_child_count(child) != 3) {
+			if(!parser_assign_expression_types(child)) {
 				all_expression_types_valid = false;
 				continue;
 			}
 			ast* expr_1 = get_child(child, 0);
-			ast* op = get_child(child, 1);
 			ast* expr_2 = get_child(child, 2);
-			if(!(is_expression(expr_1) && is_operator_plus(op) && is_expression(expr_2))) {
-				all_expression_types_valid = false;
-				continue;
-			}
+			
 			bool expr_1_type_determined = determine_expression_type(expr_1);
 			bool expr_2_type_determined = determine_expression_type(expr_2);
 			if(!(expr_1_type_determined && expr_2_type_determined)) {

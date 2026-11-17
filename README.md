@@ -31,7 +31,9 @@ Linking as well as compilation of assembly to binary are out of scope.
 ## Current goal
 
 - [ ] Enable more complex C expressions
-    - [ ] The basic arithmetic operations
+    - [x] Sums of integers
+    - [ ] Multiplication of integers
+    - [ ] Arithmetic expressions involving parentheses
 
 ## Completed goals
 

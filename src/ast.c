@@ -588,6 +588,16 @@ char* grammar_token_to_c_str(int32_t token) {
 	return str;
 }
 
+char* ast_node_kind_to_c_str(ast* node) {
+	char* str = NULL;
+	if(node->kind == NON_TERMINAL) {
+		str = grammar_token_to_c_str(node->node.non_terminal.kind);
+	} else {
+		str = token_to_c_str(node->node.terminal.token_kind);
+	}
+	return str;
+}
+
 void print_ast_node_kind(ast* node) {
 	if(node->kind == NON_TERMINAL) {
 		printf("%s\n", grammar_token_to_c_str(node->node.non_terminal.kind));

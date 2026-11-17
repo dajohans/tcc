@@ -141,12 +141,11 @@ ast* parse_rule_non_recursive(token_ptr tokens, int64_t index, ast* (rule) (toke
 				node_ptr.ptr[l] = grammar[i][l + 1](tokens, index + index_progress);
 			}
 			if(node_ptr.ptr[l] == NULL) {
-				printf("failed to match non-rec; reverting %ld matches\n", l);
+				log_entry(LOG_PARSER, "Failed to parse node in non-left recursive rule - reverting %ld nodes", l);
 				successful_rule_parse = false;
 				break;
 			}
-			printf("matched non-rec\n");
-			print_ast(node_ptr.ptr[l]);
+			log_entry(LOG_PARSER, "Successfully parsed node in non-left recursive rule: %s", ast_node_kind_to_c_str(node_ptr.ptr[l]));
 			node_ptr.len += 1;
 			index_progress += ast_num_tokens(node_ptr.ptr[l]);
 		}
@@ -223,8 +222,7 @@ ast* parse_current_rule(token_ptr tokens, int64_t index, int64_t rule_index) {
 			return NULL;
 		}
 		node_ptr.len += 1;
-		printf("matched\n");
-		print_ast(node_ptr.ptr[0]);
+		log_entry(LOG_PARSER, "Successfully parsed node: %s", ast_node_kind_to_c_str(node_ptr.ptr[0]));
 		start_index += 1;
 		index_progress += ast_num_tokens(node_ptr.ptr[0]);
 	}
@@ -239,12 +237,11 @@ ast* parse_current_rule(token_ptr tokens, int64_t index, int64_t rule_index) {
 			node_ptr.ptr[l] = grammar[rule_index][l + 1](tokens, index + index_progress);
 		}
 		if(node_ptr.ptr[l] == NULL) {
-			printf("failed to match; reverting %ld matches\n", l);
+			log_entry(LOG_PARSER, "Failed to parse node - reverting %ld nodes", l);
 			successful_rule_parse = false;
 			break;
 		}
-		printf("matched\n");
-		print_ast(node_ptr.ptr[l]);
+		log_entry(LOG_PARSER, "Successfully parsed node: %s", ast_node_kind_to_c_str(node_ptr.ptr[l]));
 		node_ptr.len += 1;
 		index_progress += ast_num_tokens(node_ptr.ptr[l]);
 	}

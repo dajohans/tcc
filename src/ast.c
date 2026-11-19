@@ -461,6 +461,26 @@ bool is_return_statement(ast* node) {
 	return true;
 }
 
+bool is_arithmetic_operator(ast* node) {
+	if(!(is_operator_plus(node) || is_operator_mult(node))) {
+		return false;
+	}
+	return true;
+}
+
+bool is_operator_mult(ast* node) {
+	if(node == NULL) {
+		return false;
+	}
+	if(node->kind != TERMINAL) {
+		return false;
+	}
+	if(node->node.terminal.token_kind != OPERATOR_MULT) {
+		return false;
+	}
+	return true;
+}
+
 bool is_operator_plus(ast* node) {
 	if(node == NULL) {
 		return false;
@@ -487,7 +507,7 @@ bool is_nested_expression(ast* node) {
 	ast* child_0 = get_child(node, 0);
 	ast* child_1 = get_child(node, 1);
 	ast* child_2 = get_child(node, 2);
-	if(!(is_expression(child_0) && is_operator_plus(child_1) && is_expression(child_2))) {
+	if(!(is_expression(child_0) && is_arithmetic_operator(child_1) && is_expression(child_2))) {
 		return false;
 	}
 	return true;

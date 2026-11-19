@@ -105,6 +105,8 @@ bool is_function_prototype(ast* node);
 bool is_type(ast* node);
 bool is_local_scope(ast* node);
 bool is_return_statement(ast* node);
+bool is_arithmetic_operator(ast* node);
+bool is_operator_mult(ast* node);
 bool is_operator_plus(ast* node);
 bool is_nested_expression(ast* node);
 ast* function_return_type(ast* fun);

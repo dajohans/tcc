@@ -4,3 +4,5 @@ a.out
 a.s
 assembly_test/a.out
 assembly_test/assembly.o
+assembly_test/arithmetic.o
+assembly_test/arithmetic.out

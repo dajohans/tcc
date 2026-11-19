@@ -52,6 +52,7 @@ ast* parse_expression(token_ptr, int64_t) { return NULL; }
 ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
 	{ parse_global_scope,        parse_function_definition,                                                        grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_type,                parse_type_identifier,                                                            grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
+	{ parse_expression,          parse_expression, parse_operator_mult, parse_expression,                          grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_expression,          parse_expression, parse_operator_plus, parse_expression,                          grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_expression,          parse_number,                                                                     grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
 	{ parse_return_statement,    parse_keyword_return, parse_expression, parse_semicolon,                          grammar_end, grammar_end, grammar_end, grammar_end, grammar_end, grammar_end },
@@ -63,6 +64,7 @@ ast* (*grammar[][RULE_LEN]) (token_ptr, int64_t) = {
 syntax_kind rule_kind[] = {
 	GLOBAL_SCOPE,
 	TYPE,
+	EXPRESSION,
 	EXPRESSION,
 	EXPRESSION,
 	RETURN_STATEMENT,
@@ -391,6 +393,20 @@ ast* parse_open_paren(token_ptr tokens, int64_t index) {
 		return NULL;
 	}
 	if(tokens.ptr[index].token_kind != PAREN_OPEN) {
+		return NULL;
+	}
+	ast* node = init_ast_token_node(tokens.ptr[index]);
+	if(node == NULL) {
+		return NULL;
+	}
+	return node;
+}
+
+ast* parse_operator_mult(token_ptr tokens, int64_t index) {
+	if(index >= tokens.len) {
+		return NULL;
+	}
+	if(tokens.ptr[index].token_kind != OPERATOR_MULT) {
 		return NULL;
 	}
 	ast* node = init_ast_token_node(tokens.ptr[index]);

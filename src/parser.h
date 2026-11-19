@@ -18,6 +18,7 @@ ast* parse_close_curly(token_ptr tokens, int64_t index);
 ast* parse_open_curly(token_ptr tokens, int64_t index);
 ast* parse_close_paren(token_ptr tokens, int64_t index);
 ast* parse_open_paren(token_ptr tokens, int64_t index);
+ast* parse_operator_mult(token_ptr tokens, int64_t index);
 ast* parse_operator_plus(token_ptr tokens, int64_t index);
 ast* parse_keyword_type(token_ptr tokens, int64_t index);
 ast* parse_keyword_return(token_ptr tokens, int64_t index);

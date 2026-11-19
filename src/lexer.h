@@ -13,6 +13,7 @@ enum Token_Kinds {
 	KEYWORD_FLOAT,
 	KEYWORD_RETURN,
 	OPERATOR_PLUS,
+	OPERATOR_MULT,
 	PAREN_OPEN,
 	PAREN_CLOSE,
 	BRACKET_OPEN,
@@ -47,6 +48,7 @@ token_ptr realloc_token_ptr(token_ptr old_ptr);
 char* token_to_c_str(int32_t token);
 token tokenize_single_char(int64_t index, string_view sv, char c, int32_t token_kind);
 token tokenize_operator_plus(int64_t index, string_view sv);
+token tokenize_operator_mult(int64_t index, string_view sv);
 token tokenize_paren_open(int64_t index, string_view sv);
 token tokenize_paren_close(int64_t index, string_view sv);
 token tokenize_curly_open(int64_t index, string_view sv);

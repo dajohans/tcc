@@ -17,6 +17,68 @@
 	"mov rax, 60\n" \
 	"syscall\n"
 
+arithmetic_tree* ast_to_arithmetic_tree(ast* expr) {
+	if(!is_expression(expr)) {
+		return NULL;
+	}
+	arithmetic_tree* node = malloc(sizeof(*node));
+	if(node == NULL) {
+		log_error("Failed to allocate node for arithmetic tree");
+		return NULL;
+	}
+	node->node = NULL;
+	node->l_child = NULL;
+	node->r_child = NULL;
+	if(!is_nested_expression(expr)) {
+		node->node = expr;
+		return node;
+	}
+	if(is_operator_plus(get_child(expr, 1))) {
+		node->node = get_child(expr, 1);
+		node->l_child = ast_to_arithmetic_tree(get_child(expr, 0));
+		node->r_child = ast_to_arithmetic_tree(get_child(expr, 2));
+	}
+	return node;
+}
+
+bool free_arithmetic_tree(arithmetic_tree* at) {
+	if(at == NULL) {
+		return false;
+	}
+	bool l_result = false;
+	bool r_result = false;
+	if(at->l_child != NULL) {
+		l_result = free_arithmetic_tree(at->l_child);
+	}
+	if(at->r_child != NULL) {
+		r_result = free_arithmetic_tree(at->r_child);
+	}
+	free(at);
+	return l_result && r_result;
+	
+}
+
+void print_arithmetic_tree_helper(arithmetic_tree* at, int64_t padding_count) {
+	for(int64_t i = 0; i < padding_count; i++) {
+		printf("  ");
+	}
+	if(at->l_child != NULL && at->r_child != NULL) {
+		printf("%s\n", token_to_c_str(at->node->node.terminal.token_kind));
+		print_arithmetic_tree_helper(at->l_child, padding_count + 1);
+		print_arithmetic_tree_helper(at->r_child, padding_count + 1);
+	} else {
+		printf("%s\n", grammar_token_to_c_str(at->node->node.non_terminal.kind));
+	}
+}
+
+void print_arithmetic_tree(arithmetic_tree* at) {
+	if(at == NULL) {
+		return;
+	}
+	print_arithmetic_tree_helper(at, 0);
+}
+
+
 string add_code_function_label(ast* identifier) {
 	if(!is_identifier(identifier)) {
 		return uninit_str();
@@ -87,6 +149,10 @@ string add_code_expression(ast* expr) {
 	if(!is_expression(expr)) {
 		return uninit_str();
 	}
+	arithmetic_tree* at = ast_to_arithmetic_tree(expr);
+	print_arithmetic_tree(at);
+	free_arithmetic_tree(at);
+	
 	string ret_str = uninit_str();
 	if(!is_nested_expression(expr)) {
 		ast* child = get_child(expr, 0);

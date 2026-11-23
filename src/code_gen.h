@@ -4,6 +4,14 @@
 #include "ast.h"
 #include "parser.h"
 
+typedef struct arithmetic_tree {
+	ast* node;
+	struct arithmetic_tree* l_child;
+	struct arithmetic_tree* r_child;
+} arithmetic_tree;
+
+arithmetic_tree* ast_to_arithmetic_tree(ast* expr);
+bool free_arithmetic_tree(arithmetic_tree* at);
 string add_code_function_label(ast* identifier);
 string add_code_expression(ast* expr);
 string add_code_return_statement(ast* statement);

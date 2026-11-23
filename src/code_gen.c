@@ -56,6 +56,8 @@ string add_code_expression_helper(ast* expr) {
 		child = get_child(expr, 1);
 		if(is_operator_plus(child)) {
 			ret_str = str_append_c_str(ret_str, "add r9, r8\n");
+		} else if(is_operator_mult(child)) {
+			ret_str = str_append_c_str(ret_str, "imul r9, r8\n");
 		}
 	// As long as there are no parenthesis in the arithmetic
 	// expression, it should be enough to use 3 registers to compute

@@ -33,6 +33,7 @@ Linking as well as compilation of assembly to binary are out of scope.
 - [ ] Enable more complex C expressions
     - [x] Sums of integers
     - [ ] Multiplication of integers
+      - [ ] Add tree representation of arithmetic expressions, which describes operator precedence
     - [ ] Arithmetic expressions involving parentheses
 
 ## Completed goals

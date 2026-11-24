@@ -17,6 +17,34 @@
 	"mov rax, 60\n" \
 	"syscall\n"
 
+arithmetic_tree* ast_to_arithmetic_tree_product_subtree(ast* expr, ast* out_last_expr) {
+	if(!is_expression(expr)) {
+		return NULL;
+	}
+	arithmetic_tree* node = malloc(sizeof(*node));
+	if(node == NULL) {
+		log_error("Failed to allocate node for arithmetic tree");
+		return NULL;
+	}
+	node->node = NULL;
+	node->l_child = NULL;
+	node->r_child = NULL;
+	if(!is_nested_expression(expr)) {
+		node->node = expr;
+		*out_last_expr = *expr;
+		return node;
+	}
+	if(is_operator_mult(get_child(expr, 1))) {
+		node->node = get_child(expr, 1);
+		node->l_child = ast_to_arithmetic_tree_product_subtree(get_child(expr, 0), out_last_expr);
+		node->r_child = ast_to_arithmetic_tree_product_subtree(get_child(expr, 2), out_last_expr);
+	} else if(is_operator_plus(get_child(expr, 1))) {
+		node->node = get_child(expr, 0);
+		*out_last_expr = *node->node;
+	}
+	return node;
+}
+
 arithmetic_tree* ast_to_arithmetic_tree(ast* expr) {
 	if(!is_expression(expr)) {
 		return NULL;
@@ -37,6 +65,18 @@ arithmetic_tree* ast_to_arithmetic_tree(ast* expr) {
 		node->node = get_child(expr, 1);
 		node->l_child = ast_to_arithmetic_tree(get_child(expr, 0));
 		node->r_child = ast_to_arithmetic_tree(get_child(expr, 2));
+	} else if (is_operator_mult(get_child(expr, 1))) {
+		ast last_product_factor;
+		arithmetic_tree* tmp = ast_to_arithmetic_tree_product_subtree(expr, &last_product_factor);
+		ast* next_ast_node = get_parent(&last_product_factor);
+		// NOTE: next_ast_node should always be a nested expression
+		if(is_operator_plus(get_child(next_ast_node, 1))) {
+			node->node = get_child(next_ast_node, 1);
+			node->l_child = tmp;
+			node->r_child = ast_to_arithmetic_tree(get_child(next_ast_node, 2));
+		} else if(is_operator_mult(get_child(next_ast_node, 1))) {
+			return tmp;
+		}
 	}
 	return node;
 }
@@ -67,7 +107,11 @@ void print_arithmetic_tree_helper(arithmetic_tree* at, int64_t padding_count) {
 		print_arithmetic_tree_helper(at->l_child, padding_count + 1);
 		print_arithmetic_tree_helper(at->r_child, padding_count + 1);
 	} else {
-		printf("%s\n", grammar_token_to_c_str(at->node->node.non_terminal.kind));
+		printf("%s", grammar_token_to_c_str(at->node->node.non_terminal.kind));
+		if(is_int(get_child(at->node, 0))) {
+			printf(" - %.*s", SV_ARG(get_child(at->node, 0)->node.terminal.lexeme));
+		}
+		printf("\n");
 	}
 }
 

@@ -10,6 +10,7 @@ typedef struct arithmetic_tree {
 	struct arithmetic_tree* r_child;
 } arithmetic_tree;
 
+arithmetic_tree* ast_to_arithmetic_tree_product_subtree(ast* expr, ast* out_last_expr);
 arithmetic_tree* ast_to_arithmetic_tree(ast* expr);
 bool free_arithmetic_tree(arithmetic_tree* at);
 string add_code_function_label(ast* identifier);

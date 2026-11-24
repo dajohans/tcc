@@ -31,15 +31,20 @@ arithmetic_tree* ast_to_arithmetic_tree_product_subtree(ast* expr, ast* out_last
 	node->r_child = NULL;
 	if(!is_nested_expression(expr)) {
 		node->node = expr;
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Creating node: %s", ast_node_kind_to_c_str(node->node));
 		*out_last_expr = *expr;
 		return node;
 	}
 	if(is_operator_mult(get_child(expr, 1))) {
 		node->node = get_child(expr, 1);
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Creating node: %s", ast_node_kind_to_c_str(node->node));
 		node->l_child = ast_to_arithmetic_tree_product_subtree(get_child(expr, 0), out_last_expr);
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Adding operand node: %s", ast_node_kind_to_c_str(node->l_child->node));
 		node->r_child = ast_to_arithmetic_tree_product_subtree(get_child(expr, 2), out_last_expr);
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Adding operand node: %s", ast_node_kind_to_c_str(node->r_child->node));
 	} else if(is_operator_plus(get_child(expr, 1))) {
 		node->node = get_child(expr, 0);
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Creating node: %s", ast_node_kind_to_c_str(node->node));
 		*out_last_expr = *node->node;
 	}
 	return node;
@@ -59,12 +64,16 @@ arithmetic_tree* ast_to_arithmetic_tree(ast* expr) {
 	node->r_child = NULL;
 	if(!is_nested_expression(expr)) {
 		node->node = expr;
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Creating node: %s", ast_node_kind_to_c_str(node->node));
 		return node;
 	}
 	if(is_operator_plus(get_child(expr, 1))) {
 		node->node = get_child(expr, 1);
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Creating node: %s", ast_node_kind_to_c_str(node->node));
 		node->l_child = ast_to_arithmetic_tree(get_child(expr, 0));
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Adding operand node: %s", ast_node_kind_to_c_str(node->l_child->node));
 		node->r_child = ast_to_arithmetic_tree(get_child(expr, 2));
+		log_entry(LOG_CODE_GEN, "arithmetic_tree: Adding operand node: %s", ast_node_kind_to_c_str(node->r_child->node));
 	} else if (is_operator_mult(get_child(expr, 1))) {
 		ast last_product_factor;
 		arithmetic_tree* tmp = ast_to_arithmetic_tree_product_subtree(expr, &last_product_factor);
@@ -72,8 +81,11 @@ arithmetic_tree* ast_to_arithmetic_tree(ast* expr) {
 		// NOTE: next_ast_node should always be a nested expression
 		if(is_operator_plus(get_child(next_ast_node, 1))) {
 			node->node = get_child(next_ast_node, 1);
+			log_entry(LOG_CODE_GEN, "arithmetic_tree: Creating node: %s", ast_node_kind_to_c_str(node->node));
 			node->l_child = tmp;
+			log_entry(LOG_CODE_GEN, "arithmetic_tree: Adding operand node: %s", ast_node_kind_to_c_str(node->l_child->node));
 			node->r_child = ast_to_arithmetic_tree(get_child(next_ast_node, 2));
+			log_entry(LOG_CODE_GEN, "arithmetic_tree: Adding operand node: %s", ast_node_kind_to_c_str(node->r_child->node));
 		} else if(is_operator_mult(get_child(next_ast_node, 1))) {
 			return tmp;
 		}
